@@ -1,0 +1,9 @@
+{
+    "path" : "~/R/busses",
+    "sortOrder" : [
+        {
+            "ascending" : true,
+            "columnIndex" : 2
+        }
+    ]
+}

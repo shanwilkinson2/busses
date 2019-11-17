@@ -1,0 +1,33 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1573983940349.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "FF428B3D",
+    "lastKnownWriteTime" : 3900165862815381046,
+    "last_content_update" : 1573983940349,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "AD855F3",
+        "caption" : "stop_times_supershort[[9]][[1]]",
+        "contentUrl" : "grid_resource/gridviewer.html?env=_rs_no_env&obj=&cache_key=AD855F3",
+        "displayedObservations" : 15,
+        "environment" : "_rs_no_env",
+        "expression" : "stop_times_supershort[[9]][[1]]",
+        "object" : "",
+        "preview" : 0,
+        "totalObservations" : 15,
+        "variables" : 8
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 8,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}
