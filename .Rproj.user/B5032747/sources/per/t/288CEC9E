@@ -1,0 +1,33 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1574461949414.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "288CEC9E",
+    "lastKnownWriteTime" : 7287422520962202146,
+    "last_content_update" : 1574461949414,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "CBAA8CD1",
+        "caption" : "stops_melted",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=stops_melted&cache_key=CBAA8CD1",
+        "displayedObservations" : "36",
+        "environment" : "",
+        "expression" : "stops_melted",
+        "object" : "stops_melted",
+        "preview" : "0",
+        "totalObservations" : "36",
+        "variables" : "3"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

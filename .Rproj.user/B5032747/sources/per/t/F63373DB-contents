@@ -7,6 +7,9 @@ library(dplyr)
 library(tidyr)
 library(stringr)
 library(purrr)
+library(readxl)
+library(openxlsx)
+#library(otuSummary)
 
 ###########,
 # open data manchester bus fare https://www.dropbox.com/sh/4djlyzcdo0ytpcf/AABOIfA4vZyTzkZqbsTUPaFGa?dl=0 
@@ -31,7 +34,52 @@ library(purrr)
 # stop times - big file 8MB
   stop_times <- read_csv("https://www.dropbox.com/sh/4djlyzcdo0ytpcf/AADqaMDXl8jsJJSUongzQiwqa/gtdf-out/stop_times.txt?dl=1")
  
-e########## 
+# fares. Not all funcitons will read from a web link. Seems to have a hidden sheet...
+  diamond_fare1 <- read.xlsx("https://www.dropbox.com/sh/4djlyzcdo0ytpcf/AAAoGQzqPcROfzqsmHeVIFCxa/Fare%20tables/Diamond%20Bus/715_20190206205722.xlsx?dl=1", 
+                             sheet = 2, startRow = 1)
+  # doesn't work. lower triangle matrix
+  # diamond_fare2 <- matrixConvert(diamond_fare1)
+
+# transform fare table  
+  varname <- diamond_fare1
+  numrows <- nrow(varname-1)
+  numcols <- ncol(varname)
+  stop_names <- vector(mode='character',length=numcols)
+
+  names(varnames) <- stop_names
+
+  stops_melted <- data.frame(matrix(ncol = 3, nrow = numrows*numcols/2)) %>%
+                           setNames(c("from", "to", "price"))
+
+  # get stop names in a vector    
+    for(i in 1:numcols) {
+        stop_names[i] <- varname[i,i]
+    }
+  
+  # take away the first row with just the first variable name in as got it now
+  varname <- varname[-1,]  
+  names(varname) <- stop_names
+  row.names(varname) <- stop_names[2:length(stop_names)]
+  varname <- data.matrix(varname)
+  
+  stops_melted <- cbind(which(!is.na(varname),arr.ind = TRUE),na.omit(as.vector(varname)))
+  rownames(stops_melted) <- c()
+  colnames(stops_melted)[3] <- "price"
+  stops_melted <- as.data.frame(stops_melted)
+  stops_melted[,"from"] <- NA
+  stops_melted[,"to"] <- NA
+  
+  
+  # get row / col indices into to / from names  
+   for(i in 1:nrow(stops_melted)){
+        stops_melted[i,4] <- row.names(varname)[stops_melted[i,1]]
+        stops_melted[i,5] <- colnames(varname)[stops_melted[i,2]]
+        }
+  
+  stops_melted <- stops_melted %>%
+    select(from, to, price)
+  
+########## 
 # which routes run to which stops?  
   
 
