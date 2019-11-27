@@ -1,0 +1,33 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1574707142075.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "7F302E2C",
+    "lastKnownWriteTime" : 1574463356,
+    "last_content_update" : 1574707142075,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "9A5B3993",
+        "caption" : "routes",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=routes&cache_key=9A5B3993",
+        "displayedObservations" : 794,
+        "environment" : "",
+        "expression" : "routes",
+        "object" : "routes",
+        "preview" : 0,
+        "totalObservations" : 794,
+        "variables" : 5
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

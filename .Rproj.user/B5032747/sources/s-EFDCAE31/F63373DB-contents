@@ -34,12 +34,13 @@ library(openxlsx)
 # stop times - big file 8MB
   stop_times <- read_csv("https://www.dropbox.com/sh/4djlyzcdo0ytpcf/AADqaMDXl8jsJJSUongzQiwqa/gtdf-out/stop_times.txt?dl=1")
  
+# bus companies
+  agencies <- read_csv("https://www.dropbox.com/sh/4djlyzcdo0ytpcf/AABaLjUO7xg7sYJ1oSiHJEpTa/gtdf-out/agency.txt?dl=1")  
+  
 # fares. Not all funcitons will read from a web link. Seems to have a hidden sheet...
   diamond_fare1 <- read.xlsx("https://www.dropbox.com/sh/4djlyzcdo0ytpcf/AAAoGQzqPcROfzqsmHeVIFCxa/Fare%20tables/Diamond%20Bus/715_20190206205722.xlsx?dl=1", 
                              sheet = 2, startRow = 1)
-  # doesn't work. lower triangle matrix
-  # diamond_fare2 <- matrixConvert(diamond_fare1)
-
+  
 # transform fare table  
   varname <- diamond_fare1
   numrows <- nrow(varname-1)
@@ -64,10 +65,10 @@ library(openxlsx)
   
   stops_melted <- cbind(which(!is.na(varname),arr.ind = TRUE),na.omit(as.vector(varname)))
   rownames(stops_melted) <- c()
-  colnames(stops_melted)[3] <- "price"
+  # colnames(stops_melted)[3] <- "price"
   stops_melted <- as.data.frame(stops_melted)
-  stops_melted[,"from"] <- NA
-  stops_melted[,"to"] <- NA
+  # stops_melted[,"from"] <- NA
+  # stops_melted[,"to"] <- NA
   
   
   # get row / col indices into to / from names  
@@ -75,9 +76,11 @@ library(openxlsx)
         stops_melted[i,4] <- row.names(varname)[stops_melted[i,1]]
         stops_melted[i,5] <- colnames(varname)[stops_melted[i,2]]
         }
+
+  names(stops_melted) <- c("from_row", "to_col", "price", "from_name", "to_name")
+  stops_melted$route_short_name <- "715"
+  stops_melted$agency_id <- "GTB"
   
-  stops_melted <- stops_melted %>%
-    select(from, to, price)
   
 ########## 
 # which routes run to which stops?  

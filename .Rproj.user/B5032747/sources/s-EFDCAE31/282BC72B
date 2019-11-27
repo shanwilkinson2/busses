@@ -12,9 +12,9 @@
     "path" : null,
     "project_path" : null,
     "properties" : {
-        "cacheKey" : "A3A9C5FF",
+        "cacheKey" : "148308F7",
         "caption" : "varname",
-        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=varname&cache_key=A3A9C5FF",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=varname&cache_key=148308F7",
         "displayedObservations" : "8",
         "environment" : "",
         "expression" : "varname",

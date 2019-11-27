@@ -12,16 +12,16 @@
     "path" : null,
     "project_path" : null,
     "properties" : {
-        "cacheKey" : "CBAA8CD1",
+        "cacheKey" : "D060FF99",
         "caption" : "stops_melted",
-        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=stops_melted&cache_key=CBAA8CD1",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=stops_melted&cache_key=D060FF99",
         "displayedObservations" : "36",
         "environment" : "",
         "expression" : "stops_melted",
         "object" : "stops_melted",
         "preview" : "0",
         "totalObservations" : "36",
-        "variables" : "3"
+        "variables" : "5"
     },
     "read_only" : false,
     "read_only_alternatives" : [
