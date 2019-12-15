@@ -1,5 +1,18 @@
 # combine routes to stops (via trips & stop times)
 
+# stops(stop_id) -> 
+#   stop_times(trip_id, stop_id) -> (has no unique id)
+#     trips(trip_id, route_id) ->
+#       routes(route_id)
+
+##########,
+# data from open data manchester bus fare 
+# https://www.dropbox.com/sh/4djlyzcdo0ytpcf/AABOIfA4vZyTzkZqbsTUPaFGa?dl=0 
+
+# definitions:
+# https://developers.google.com/transit/gtfs/reference/
+#################
+
 # load packages 
   library(tidyr)
   library(sf)
@@ -9,11 +22,23 @@
   source("01_read_in_files.R")
 
 ### 
+# 
+# joined <- trips %>%
+#   group_by(route_id) %>% 
+#  # just get the first trip per route
+#   filter(trip_id == min(trip_id)) %>%
+#   ungroup() %>%
+#   left_join(routes, by = "route_id") %>%
+#   right_join(stop_times, by = "trip_id")
+# 
+# joined <- right_join(trips, routes, by = "route_id")
 
 # # add stop location to stop times - takes too long
 #   stop_times <- left_join(stop_times, stops, by = "stop_id") %>%
 #   st_as_sf()
 
+  
+  
 # add service id to trip
   # stop_times <- left_join(stop_times, trips, by = "trip_id")
   stop_times <- stop_times %>%
