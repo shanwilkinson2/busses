@@ -1,10 +1,5 @@
 # combine routes to stops (via trips & stop times)
 
-# stops(stop_id) -> 
-#   stop_times(trip_id, stop_id) -> (has no unique id)
-#     trips(trip_id, route_id) ->
-#       routes(route_id)
-
 ##########,
 # data from open data manchester bus fare 
 # https://www.dropbox.com/sh/4djlyzcdo0ytpcf/AABOIfA4vZyTzkZqbsTUPaFGa?dl=0 
@@ -21,23 +16,45 @@
 # load files, takes a while...
   source("01_read_in_files.R")
 
-### 
-# 
-# joined <- trips %>%
-#   group_by(route_id) %>% 
-#  # just get the first trip per route
-#   filter(trip_id == min(trip_id)) %>%
-#   ungroup() %>%
-#   left_join(routes, by = "route_id") %>%
-#   right_join(stop_times, by = "trip_id")
-# 
-# joined <- right_join(trips, routes, by = "route_id")
+###################### 
 
-# # add stop location to stop times - takes too long
-#   stop_times <- left_join(stop_times, stops, by = "stop_id") %>%
-#   st_as_sf()
+# stops(stop_id) -> 14115
+#   stop_times(trip_id, stop_id) -> (has no unique id) 3,253,507
+#     trips(trip_id, route_id) -> 77,722
+#       routes(route_id) 794
 
+# create a joined dataset
+  joined <- trips %>%
+    group_by(route_id) %>%
+   # just get the first trip per route
+    filter(trip_id == min(trip_id)) %>%
+    ungroup() %>%
+    left_join(routes, by = "route_id") %>%
+    left_join(stop_times, by = "trip_id") %>% # getting 33,484 from this - because one row per stop per route
+    left_join(stops, by = "stop_id") %>%
+    st_as_sf() %>% 
+    mutate(arrival_time = as.character(arrival_time), 
+           departure_time = as.character(departure_time))
+ 
+# # write joined dataset to ESRI shapefile. 
+#   # abbreviates field names, drops arrival time & departure time
+#   st_write(joined, "joined_stops_routes.shp")
   
+# # code to read in joined dataset & put names back  
+#   imported_joined <- st_read("joined_stops_routes.shp")
+#   names(imported_joined) <- c("route_id", "service_id", "trip_id", "trip_headsign",
+#                     "agency_id", "route_short_name", "route_long_name", "route_type",      
+#                     "arrival_time", "departure_time", "stop_id", "stop_sequence",  
+#                     "pickup_type", "drop_off_type", "stop_name", "geometry"
+#                     )
+
+  # write joined dataset as geojson 
+  # keeps field names the same unlike esri shp but still drops time fields 
+  # but ok converted to character
+  st_write(joined, "joined_stops_routes.geojson")
+  
+  
+##########################
   
 # add service id to trip
   # stop_times <- left_join(stop_times, trips, by = "trip_id")
