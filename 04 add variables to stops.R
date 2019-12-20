@@ -12,6 +12,7 @@ library(dplyr)
 library(sf)
 library(openxlsx)
 library(janitor)
+library(fingertipsR)
 
 # bus stops
   stops <- read_csv("https://www.dropbox.com/sh/4djlyzcdo0ytpcf/AADMaJKBTuHlp5jdXBmgRT8ya/gtdf-out/stops.txt?dl=1") %>%
@@ -44,8 +45,17 @@ stops <- stops %>%
     clean_names() %>%
     select(c(1:4)) # drop everything except LA details & overall imd
   
-stops <- left_join(stops, imd, by = c("LSOA11CD"="lsoa_code_2011"))
+# export merged file
+  stops <- left_join(stops, imd, by = c("LSOA11CD"="lsoa_code_2011"))
+
+# remove imd as merged now.   
+  rm(imd) 
   
 # export joined file
   st_write(stops, "stops_extradata.geojson")
+
+#############
+  
+# import life expectancy
+  # life_expect <- fingertips_data(IndicatorID = 93283) # doesn't work yet
   
