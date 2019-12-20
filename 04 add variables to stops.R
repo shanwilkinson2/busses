@@ -10,6 +10,8 @@
 library(readr)
 library(dplyr)
 library(sf)
+library(openxlsx)
+library(janitor)
 
 # bus stops
   stops <- read_csv("https://www.dropbox.com/sh/4djlyzcdo0ytpcf/AADMaJKBTuHlp5jdXBmgRT8ya/gtdf-out/stops.txt?dl=1") %>%
@@ -30,9 +32,20 @@ stops <- stops %>%
   st_join(msoa, join = st_within) %>%
   select(c(1:3, 5:7, 13:14))
 
-# export joined file
-  st_write(stops, "stops_extradata.geojson")
-
 # remove boundary files now merged in
   rm(lsoa)
   rm(msoa)
+  
+# import imd
+  # read.xlsx imports from web link
+  imd <- read.xlsx("https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/833978/File_5_-_IoD2019_Scores.xlsx",
+                   sheet = 2) %>%
+    select(-2) %>% # drop lsoa name as already got it 
+    clean_names() %>%
+    select(c(1:4)) # drop everything except LA details & overall imd
+  
+stops <- left_join(stops, imd, by = c("LSOA11CD"="lsoa_code_2011"))
+  
+# export joined file
+  st_write(stops, "stops_extradata.geojson")
+  
