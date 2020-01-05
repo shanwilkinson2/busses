@@ -13,6 +13,7 @@ library(sf)
 library(openxlsx)
 library(janitor)
 library(fingertipsR)
+library(tidyr)
 
 # bus stops
   stops <- read_csv("https://www.dropbox.com/sh/4djlyzcdo0ytpcf/AADMaJKBTuHlp5jdXBmgRT8ya/gtdf-out/stops.txt?dl=1") %>%
@@ -31,7 +32,7 @@ library(fingertipsR)
 stops <- stops %>%
   st_join(lsoa, join = st_within) %>%
   st_join(msoa, join = st_within) %>%
-  select(c(1:3, 5:7, 13:14))
+  select(c(1:3, 5:7, 12:14))
 
 # remove boundary files now merged in
   rm(lsoa)
@@ -45,17 +46,40 @@ stops <- stops %>%
     clean_names() %>%
     select(c(1:4)) # drop everything except LA details & overall imd
   
-# export merged file
+# merge in imd
   stops <- left_join(stops, imd, by = c("LSOA11CD"="lsoa_code_2011"))
 
 # remove imd as merged now.   
   rm(imd) 
   
-# export joined file
-  st_write(stops, "stops_extradata.geojson")
-
 #############
   
 # import life expectancy
-  # life_expect <- fingertips_data(IndicatorID = 93283) # doesn't work yet
+  # # list of available indicators
+  # indicators() %>%
+  #   filter(IndicatorID == 93283) %>%
+  #   View()
+
+  # # list of available areas
+  #   indicator_areatypes(IndicatorID = 93283)   
+
+  # get life expectancy
+    # AreaTypeID 3 = MSOA
+    life_exp <- fingertips_data(
+        IndicatorID = 93283, 
+        ProfileID = 143, 
+        AreaTypeID = 3) %>%    
+      filter(AreaType == "MSOA") %>%
+      select(AreaCode, Sex, Value) %>%
+      spread(key = Sex, value = Value) %>%
+      select(AreaCode, female_life_exp = Female, male_life_exp = Male)
+ 
+  # merge in life expectancy
+    stops <- left_join(stops, life_exp, by = c("msoa11cd" = "AreaCode"))
+    
+##########
+    
+    # export joined file
+    st_write(stops, "stops_extradata.geojson")
+    
   
