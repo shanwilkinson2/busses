@@ -9,7 +9,24 @@
 
 # read in files
   stops <- st_read("stops_extradata.geojson")
-  stops_routes <- st_read("joined_stops_routes.geojson")  
+  stops_routes <- st_read("joined_stops_routes.geojson") 
+
+ # was going to filter out different operatorts/ in/ out route
+    # but different numbers of stops.
+    # seemed to work fine without bothering.
+  stops_routes %>%
+    st_drop_geometry() %>%
+    filter(route_short_name ==575) %>%
+    group_by(route_id) %>%
+    summarise(n())
+ stops_routes %>%
+   st_drop_geometry() %>%
+   filter(route_short_name ==575) %>%
+   select(route_id, stop_name)
+  stops_routes %>%
+    st_drop_geometry() %>%
+    group_by(route_short_name) %>%
+    filter(min(route_id))
 
 # join
   stops_life_exp <- stops %>%
@@ -18,7 +35,9 @@
   
   # test one route only
   stops_routes_short <- stops_routes %>%
-    filter(route_id == "NOR: 575:I:")
+    filter(route_id == "NOR: 575:O:") # 42 stops
+  stops_routes_short <- stops_routes %>%
+    filter(route_id == "GTB: 575:O:") # 27 stops
   
   # join
   stops_routes_short <- 
