@@ -6,6 +6,7 @@
   library(leaflet)
   library(RColorBrewer)
   library(glue)
+  library(shinydashboard)
 
 # read in files
   stops <- st_read("stops_extradata.geojson")
@@ -13,20 +14,11 @@
 
  # was going to filter out different operatorts/ in/ out route
     # but different numbers of stops.
-    # seemed to work fine without bothering.
   stops_routes %>%
     st_drop_geometry() %>%
     filter(route_short_name ==575) %>%
     group_by(route_id) %>%
     summarise(n())
- stops_routes %>%
-   st_drop_geometry() %>%
-   filter(route_short_name ==575) %>%
-   select(route_id, stop_name)
-  stops_routes %>%
-    st_drop_geometry() %>%
-    group_by(route_short_name) %>%
-    filter(min(route_id))
 
 # join
   stops_life_exp <- stops %>%
@@ -46,10 +38,40 @@
 # map male life expectancy along route selected above
   
   pal <- colorNumeric(palette = "BuPu", domain = stops_routes_short$male_life_exp)
-  mylabel <- glue("{stops_routes_short$stop_name}
+  mylabel <- glue("route number: {stops_routes_short$route_short_name} operator: {stops_routes_short$agency_id}<br>
+                  {stops_routes_short$stop_name}<br>
                   Male life expectancy: {stops_routes_short$male_life_exp}")
   
   leaflet(stops_routes_short) %>%  
     addProviderTiles("Stamen.TonerLite") %>%
     addCircleMarkers(radius = 5, fillColor = ~pal(male_life_exp), 
-    label = ~mylabel, weight = 2, fillOpacity = 0.8, color = "black")
+    popup = ~mylabel, weight = 2, fillOpacity = 0.8, color = "black")
+  
+# shiny dashboard ############
+  
+  ui <- dashboardPage(
+    dashboardHeader(),
+    dashboardSidebar(
+      selectInput("select_gender", "Gender:", 
+                  c("Male" = "male_life_exp", "Female" = "female_life_exp")),
+      selectInput("select_route_id", "Route ID", unique(stops_routes$route_id))
+    ),
+    dashboardBody(
+      leafletOutput("mymap")
+    )
+  )
+  
+  server <- function(input, output) {
+    pal <- colorNumeric(palette = "BuPu", domain = stops_routes_short$male_life_exp)
+    mylabel <- glue("route number: {stops_routes_short$route_short_name} operator: {stops_routes_short$agency_id}<br>
+                  {stops_routes_short$stop_name}<br>
+                  Male life expectancy: {stops_routes_short$male_life_exp}")
+    
+    mymap <- leaflet(stops_routes_short) %>%  
+      addProviderTiles("Stamen.TonerLite") %>%
+      addCircleMarkers(radius = 5, fillColor = ~pal(male_life_exp), 
+                       popup = ~mylabel, weight = 2, fillOpacity = 0.8, color = "black")
+    output$mymap <- renderLeaflet(mymap)
+  }
+  
+  shinyApp(ui, server)
