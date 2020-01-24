@@ -71,24 +71,45 @@ saveWidget(life_exp_map, "life_exp_map.html")
     ),
     dashboardBody(
       h1("Life expectancy along a bus route"),
-      leafletOutput("mymap"),
+      # leafletOutput("mymap"),
+      leafletOutput("bus_map"),
       tableOutput("table")
     )
   )
   
   server <- function(input, output) {
-    # map
-      pal <- colorNumeric(palette = "BuPu", domain = stops_routes_short$male_life_exp, reverse = TRUE)
-      mylabel <- glue("route number: {stops_routes_short$route_short_name} operator: {stops_routes_short$agency_id}<br>
-                    {stops_routes_short$stop_name}<br>
-                    Male life expectancy: {stops_routes_short$male_life_exp}")
+    # # map
+    #   pal <- colorNumeric(palette = "BuPu", domain = stops_routes_short$male_life_exp, reverse = TRUE)
+    #   mylabel <- glue("route number: {stops_routes_short$route_short_name} operator: {stops_routes_short$agency_id}<br>
+    #                 {stops_routes_short$stop_name}<br>
+    #                 Male life expectancy: {stops_routes_short$male_life_exp}")
+    #   
+    #   mymap <- leaflet(stops_routes_short) %>%  
+    #     addProviderTiles("Stamen.TonerLite") %>%
+    #     addCircleMarkers(radius = 8, fillColor = ~pal(stops_routes_short$male_life_exp), 
+    #                      popup = ~mylabel, weight = 2, fillOpacity = 0.8, color = "black")
+    #   output$mymap <- renderLeaflet(mymap)
+ 
+    # interactive map
+      map_pal <- reactive(
+        colorNumeric(palette = "BuPu", domain = !!!input$select_gender, reverse = TRUE)
+      )
+ 
       
-      mymap <- leaflet(stops_routes_short) %>%  
+      output$bus_map <- renderLeaflet(
+        stops_routes_joined %>%
+          filter(route_id == input$select_route_id) %>%
+          select(route_short_name, route_long_name, stop_name, !!!input$select_gender) %>%
+        leaflet() %>%  
         addProviderTiles("Stamen.TonerLite") %>%
-        addCircleMarkers(radius = 8, fillColor = ~pal(stops_routes_short$male_life_exp), 
-                         popup = ~mylabel, weight = 2, fillOpacity = 0.8, color = "black")
-      output$mymap <- renderLeaflet(mymap)
-      
+        addCircleMarkers(radius = 8, 
+                    #     fillColor = ~map_pal(),
+                    #      popup = ~glue("route number: {stops_routes_short$route_short_name} operator: {stops_routes_short$agency_id}<br>
+                    # {stops_routes_short$stop_name}<br>
+                    # life expectancy: {!!!input$select_gender}"), 
+                         weight = 2, fillOpacity = 0.8, color = "black")
+      )
+           
     # table
       output$table <- renderTable(
         stops_routes_joined %>%
