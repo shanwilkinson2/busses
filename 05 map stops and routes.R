@@ -10,6 +10,7 @@
   library(htmlwidgets)
   library(shiny)
 
+  
 # read in files
   stops <- st_read("stops_extradata.geojson")
   stops_routes <- st_read("joined_stops_routes.geojson") 
@@ -91,24 +92,34 @@ saveWidget(life_exp_map, "life_exp_map.html")
     #   output$mymap <- renderLeaflet(mymap)
  
     # interactive map
+    # can't work out how to use selected gender in popup/ label or colour????
       map_pal <- reactive(
         colorNumeric(palette = "BuPu", domain = !!!input$select_gender, reverse = TRUE)
       )
- 
       
       output$bus_map <- renderLeaflet(
         stops_routes_joined %>%
           filter(route_id == input$select_route_id) %>%
-          select(route_short_name, route_long_name, stop_name, !!!input$select_gender) %>%
+          select(route_short_name, route_long_name, stop_name, male_life_exp, female_life_exp, !!!input$select_gender, agency_id) %>%
         leaflet() %>%  
         addProviderTiles("Stamen.TonerLite") %>%
         addCircleMarkers(radius = 8, 
                     #     fillColor = ~map_pal(),
-                    #      popup = ~glue("route number: {stops_routes_short$route_short_name} operator: {stops_routes_short$agency_id}<br>
-                    # {stops_routes_short$stop_name}<br>
-                    # life expectancy: {!!!input$select_gender}"), 
-                         weight = 2, fillOpacity = 0.8, color = "black")
+                         popup = ~glue("route number: {route_short_name} operator: {agency_id}<br>
+                    {stop_name}<br>
+                    {male_life_exp} {female_life_exp}"), #<br>
+                    # #life expectancy {!!!input$select_gender}")
+                    #label = ~!!!input$select_gender,
+                    weight = 2, fillOpacity = 0.8, color = "black")
       )
+      
+      # # potential solution:
+      # observe({
+      #   leafletProxy("map", data = dat) %>%
+      #     clearMarkers() %>%
+      #     addCircleMarkers(data = dat,
+      #                      color = ~pal(eval(as.symbol(input$option))))
+      # })
            
     # table
       output$table <- renderTable(
