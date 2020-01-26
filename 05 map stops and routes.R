@@ -3,6 +3,7 @@
 # load packages
   library(sf)
   library(dplyr)
+  library(tidyr)
   library(leaflet)
   library(RColorBrewer)
   library(glue)
@@ -44,6 +45,11 @@
   stops_routes_joined <- 
     left_join(stops_routes, stops_life_exp, by = "stop_id") %>%
     mutate(stop_sequence = as.numeric(stop_sequence))
+  
+  # make one life expectancy column instead of two so can filter out unwanted one
+  stops_routes_joined2 <- stops_routes_joined %>%
+    gather(key = "life_exp_gender", value = "life_exp_val", c(male_life_exp:female_life_exp)) %>%
+    mutate(life_exp_gender = recode(life_exp_gender, "male_life_exp" = "male", "female_life_exp" = "female"))
 
 # map life expectancy along route selected above
   # palette reversed so dark = low to emphasise low rather than high 
@@ -65,7 +71,9 @@ saveWidget(life_exp_map, "life_exp_map.html")
   ui <- dashboardPage(
     dashboardHeader(),
     dashboardSidebar(
-      varSelectInput("select_gender", "Gender:", 
+      radioButtons(inputId = select_gender2, label = "Select gender", 
+                   choices = c("male", "female"), selected = "female"),
+      varSelectInput("select_gender", "Gender:",
                      data = st_drop_geometry(stops_routes_short) %>%
                        select(male_life_exp, female_life_exp),
                   c("Male" = "male_life_exp", "Female" = "female_life_exp")),
@@ -92,6 +100,10 @@ saveWidget(life_exp_map, "life_exp_map.html")
     # can't work out how to use selected gender in popup/ label or colour????
     # domain = variable whose range is the range of values  
     map_pal <- colorNumeric(palette = "BuPu", domain = c(1, 25), reverse = TRUE)
+    life_exp_pal <- colorNumeric(palette = "BuPu", 
+                                 domain = c(min(min(stops_routes_joined$male_life_exp, na.rm = TRUE), min(stops_routes_joined$female_life_exp, na.rm = TRUE)),
+                                            max(max(stops_routes_joined$male_life_exp, na.rm = TRUE), max(stops_routes_joined$female_life_exp, na.rm = TRUE))), 
+                                 reverse = TRUE)
       
       
       output$bus_map <- renderLeaflet(
@@ -102,7 +114,7 @@ saveWidget(life_exp_map, "life_exp_map.html")
         leaflet() %>%  
         addProviderTiles("Stamen.TonerLite") %>%
         addCircleMarkers(radius = 8, 
-                         fillColor = ~map_pal(stop_sequence),
+                         fillColor = ~map_pal(selected_data()$stop_sequence),
                          popup = ~glue("route number: {route_short_name} operator: {agency_id}<br>
                     {stop_name}<br>
                     life expectancy value here..."), #<br>
@@ -146,6 +158,12 @@ saveWidget(life_exp_map, "life_exp_map.html")
             lat = 7.8751893,
             zoom = 6)
   
+  # ssd_map <- leaflet() %>%
+  #   addProviderTiles(providers$CartoDB) %>%
+  #   setView(lng = -2.4282,
+  #           lat = 53.5769,
+  #           zoom = 12)
+  
   ui <- fluidPage(
     titlePanel("Reprex Map"),
     
@@ -178,12 +196,14 @@ saveWidget(life_exp_map, "life_exp_map.html")
   
   # static map
     pal <- colorNumeric(palette = "BuPu", domain = stops_routes_short$male_life_exp, reverse = TRUE)
-   
-    mymap <- leaflet(stops_routes_short) %>%
+
+  stops_routes_joined %>%
+  filter(route_id == "GTB: 575:O:") %>%
+  leaflet() %>%
       addProviderTiles("Stamen.TonerLite") %>%
       addCircleMarkers(
         radius = 8, 
-        fillColor = ~pal(male_life_exp),
+        fillColor = ~life_exp_pal(male_life_exp),
         popup = ~glue("route number: route_short_name} operator: {agency_id}<br>
           {stop_name}<br>
           Male life expectancy: {male_life_exp}"), 
@@ -191,5 +211,5 @@ saveWidget(life_exp_map, "life_exp_map.html")
         fillOpacity = 0.8, 
         color = "black")
     
-    mymap
+
     # output$mymap <- renderLeaflet(mymap)
