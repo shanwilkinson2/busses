@@ -79,7 +79,14 @@ saveWidget(life_exp_map, "life_exp_map.html")
   )
   
   server <- function(input, output) {
-    # # map
+    
+    selected_data <- reactive({
+      stops_routes_joined %>%
+        filter(route_id == input$select_route_id) %>%
+        select(route_short_name, agency_id, route_long_name, stop_name, !!!input$select_gender)
+    })
+    
+    # # static map
     #   pal <- colorNumeric(palette = "BuPu", domain = stops_routes_short$male_life_exp, reverse = TRUE)
     #   mylabel <- glue("route number: {stops_routes_short$route_short_name} operator: {stops_routes_short$agency_id}<br>
     #                 {stops_routes_short$stop_name}<br>
@@ -98,37 +105,81 @@ saveWidget(life_exp_map, "life_exp_map.html")
       )
       
       output$bus_map <- renderLeaflet(
-        stops_routes_joined %>%
-          filter(route_id == input$select_route_id) %>%
-          select(route_short_name, route_long_name, stop_name, male_life_exp, female_life_exp, !!!input$select_gender, agency_id) %>%
+        # stops_routes_joined %>%
+        #   filter(route_id == input$select_route_id) %>%
+        #   select(route_short_name, route_long_name, stop_name, male_life_exp, female_life_exp, !!!input$select_gender, agency_id) %>%
+        selected_data() %>%
         leaflet() %>%  
         addProviderTiles("Stamen.TonerLite") %>%
         addCircleMarkers(radius = 8, 
                     #     fillColor = ~map_pal(),
                          popup = ~glue("route number: {route_short_name} operator: {agency_id}<br>
                     {stop_name}<br>
-                    {male_life_exp} {female_life_exp}"), #<br>
+                    life expectancy value here..."), #<br>
                     # #life expectancy {!!!input$select_gender}")
                     #label = ~!!!input$select_gender,
                     weight = 2, fillOpacity = 0.8, color = "black")
       )
-      
-      # # potential solution:
-      # observe({
-      #   leafletProxy("map", data = dat) %>%
-      #     clearMarkers() %>%
-      #     addCircleMarkers(data = dat,
-      #                      color = ~pal(eval(as.symbol(input$option))))
-      # })
-           
+     
     # table
       output$table <- renderTable(
-        stops_routes_joined %>%
+        selected_data() %>%
         st_drop_geometry() %>%
-        filter(route_id == input$select_route_id) %>%
-          select(route_short_name, route_long_name, stop_name, !!!input$select_gender) %>%
-          arrange(!!!input$select_gender)
+        arrange(!!!input$select_gender)
       )
   }
   
   shinyApp(ui, server)
+  
+  #############################################
+  
+  library(shiny)
+  library(tidyverse)
+  
+  dat <- tibble(
+    state = c("lak", "cent", "east", "east"),
+    option_1 = c("no", "yes", "no", "yes"),
+    option_2 = c("yes", "yes", "yes", "yes"),
+    option_3 = c("no", "no", "no", "yes"),
+    lat = c(6.87239, 4.01313, 5.00959, 4.77239),
+    lon = c(29.57524, 30.56462, 32.39547, 33.59156)
+  )
+  
+  pal <- colorFactor(
+    palette = c("#FF0000", "green4"),
+    levels = c("no", "yes")
+  )
+  
+  ssd_map <- leaflet() %>%
+    addProviderTiles(providers$CartoDB) %>%
+    setView(lng = 31.2189853,
+            lat = 7.8751893,
+            zoom = 6)
+  
+  ui <- fluidPage(
+    titlePanel("Reprex Map"),
+    
+    mainPanel(
+      varSelectInput(
+        inputId = "option",
+        label = "Options:",
+        data = dat %>% select(starts_with("option_"))
+      ),
+      leafletOutput("map")
+    ))
+  
+  server <- function(input, output) {
+    output$map <- renderLeaflet({
+      ssd_map
+      
+    })
+    
+    observe({
+      leafletProxy("map", data = dat) %>%
+        clearMarkers() %>%
+        addCircleMarkers(data = dat,
+                         color = ~pal(eval(as.symbol(input$option))))
+    })
+  }
+  
+  shinyApp(ui = ui, server = server)
