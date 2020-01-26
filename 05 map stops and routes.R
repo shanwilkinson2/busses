@@ -4,6 +4,7 @@
   library(sf)
   library(dplyr)
   library(tidyr)
+  library(stringr)
   library(leaflet)
   library(RColorBrewer)
   library(glue)
@@ -71,16 +72,11 @@ saveWidget(life_exp_map, "life_exp_map.html")
   ui <- dashboardPage(
     dashboardHeader(),
     dashboardSidebar(
-      radioButtons(inputId = select_gender2, label = "Select gender", 
-                   choices = c("male", "female"), selected = "female"),
-      varSelectInput("select_gender", "Gender:",
-                     data = st_drop_geometry(stops_routes_short) %>%
-                       select(male_life_exp, female_life_exp),
-                  c("Male" = "male_life_exp", "Female" = "female_life_exp")),
+      radioButtons("select_gender", "Select gender", c("male", "female"), selected = "female"),
       selectInput("select_route_id", "Route ID", unique(stops_routes$route_id))
     ),
     dashboardBody(
-      h1("Life expectancy along a bus route"),
+      h1(glue("{selected_gender} life expectancy along a bus route")),
       # leafletOutput("mymap"),
       leafletOutput("bus_map"),
       tableOutput("table")
@@ -88,47 +84,46 @@ saveWidget(life_exp_map, "life_exp_map.html")
   )
   
   server <- function(input, output) {
-    
+  
+  # # selected gender
+  #   selected_gender <- observe{{print(input$select_gender)}}
+      
+  # reactive dataset for map & table  
     selected_data <- reactive({
-      stops_routes_joined %>%
-        filter(route_id == input$select_route_id) %>%
-        select(route_short_name, agency_id, route_long_name, stop_name, stop_sequence,
-               !!!input$select_gender)
+      stops_routes_joined2 %>%
+        filter(route_id == input$select_route_id & life_exp_gender == input$select_gender) %>%
+        select(route_short_name, agency_id, route_long_name, stop_name, 
+               stop_sequence, life_exp_gender, life_exp_val)
     })
     
     # interactive map
-    # can't work out how to use selected gender in popup/ label or colour????
-    # domain = variable whose range is the range of values  
-    map_pal <- colorNumeric(palette = "BuPu", domain = c(1, 25), reverse = TRUE)
+       # domain = variable whose range is the range of values  
     life_exp_pal <- colorNumeric(palette = "BuPu", 
-                                 domain = c(min(min(stops_routes_joined$male_life_exp, na.rm = TRUE), min(stops_routes_joined$female_life_exp, na.rm = TRUE)),
-                                            max(max(stops_routes_joined$male_life_exp, na.rm = TRUE), max(stops_routes_joined$female_life_exp, na.rm = TRUE))), 
+                                 domain = c(min(stops_routes_joined2$life_exp_val, na.rm = TRUE),
+                                            max(stops_routes_joined2$life_exp_val, na.rm = TRUE)), 
                                  reverse = TRUE)
       
       
       output$bus_map <- renderLeaflet(
-        # stops_routes_joined %>%
-        #   filter(route_id == input$select_route_id) %>%
-        #   select(route_short_name, route_long_name, stop_name, male_life_exp, female_life_exp, !!!input$select_gender, agency_id) %>%
         selected_data() %>%
         leaflet() %>%  
         addProviderTiles("Stamen.TonerLite") %>%
         addCircleMarkers(radius = 8, 
-                         fillColor = ~map_pal(selected_data()$stop_sequence),
+                         fillColor = ~life_exp_pal(life_exp_val),
                          popup = ~glue("route number: {route_short_name} operator: {agency_id}<br>
                     {stop_name}<br>
-                    life expectancy value here..."), #<br>
-                    # #life expectancy {!!!input$select_gender}")
-                    #label = ~!!!input$select_gender,
+                    {life_exp_gender} life expectancy {life_exp_val}"), 
                     weight = 2, fillOpacity = 0.8, color = "black")
       )
      
     # table
-      output$table <- renderTable(
+      output$table <- renderTable({
         selected_data() %>%
         st_drop_geometry() %>%
-        arrange(!!!input$select_gender)
-      )
+        select(route_short_name, route_long_name, 
+               stop_name, life_exp_gender, life_exp_val) %>%
+        arrange(life_exp_val)
+      })
   }
   
   shinyApp(ui, server)
