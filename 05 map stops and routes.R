@@ -42,7 +42,8 @@
     left_join(stops_routes_short, stops_life_exp, by = "stop_id")
   
   stops_routes_joined <- 
-    left_join(stops_routes, stops_life_exp, by = "stop_id")
+    left_join(stops_routes, stops_life_exp, by = "stop_id") %>%
+    mutate(stop_sequence = as.numeric(stop_sequence))
 
 # map life expectancy along route selected above
   # palette reversed so dark = low to emphasise low rather than high 
@@ -83,26 +84,15 @@ saveWidget(life_exp_map, "life_exp_map.html")
     selected_data <- reactive({
       stops_routes_joined %>%
         filter(route_id == input$select_route_id) %>%
-        select(route_short_name, agency_id, route_long_name, stop_name, !!!input$select_gender)
+        select(route_short_name, agency_id, route_long_name, stop_name, stop_sequence,
+               !!!input$select_gender)
     })
     
-    # # static map
-    #   pal <- colorNumeric(palette = "BuPu", domain = stops_routes_short$male_life_exp, reverse = TRUE)
-    #   mylabel <- glue("route number: {stops_routes_short$route_short_name} operator: {stops_routes_short$agency_id}<br>
-    #                 {stops_routes_short$stop_name}<br>
-    #                 Male life expectancy: {stops_routes_short$male_life_exp}")
-    #   
-    #   mymap <- leaflet(stops_routes_short) %>%  
-    #     addProviderTiles("Stamen.TonerLite") %>%
-    #     addCircleMarkers(radius = 8, fillColor = ~pal(stops_routes_short$male_life_exp), 
-    #                      popup = ~mylabel, weight = 2, fillOpacity = 0.8, color = "black")
-    #   output$mymap <- renderLeaflet(mymap)
- 
     # interactive map
     # can't work out how to use selected gender in popup/ label or colour????
-      map_pal <- reactive(
-        colorNumeric(palette = "BuPu", domain = !!!input$select_gender, reverse = TRUE)
-      )
+    # domain = variable whose range is the range of values  
+    map_pal <- colorNumeric(palette = "BuPu", domain = c(1, 25), reverse = TRUE)
+      
       
       output$bus_map <- renderLeaflet(
         # stops_routes_joined %>%
@@ -112,7 +102,7 @@ saveWidget(life_exp_map, "life_exp_map.html")
         leaflet() %>%  
         addProviderTiles("Stamen.TonerLite") %>%
         addCircleMarkers(radius = 8, 
-                    #     fillColor = ~map_pal(),
+                         fillColor = ~map_pal(stop_sequence),
                          popup = ~glue("route number: {route_short_name} operator: {agency_id}<br>
                     {stop_name}<br>
                     life expectancy value here..."), #<br>
@@ -183,3 +173,23 @@ saveWidget(life_exp_map, "life_exp_map.html")
   }
   
   shinyApp(ui = ui, server = server)
+  
+  ##################
+  
+  # static map
+    pal <- colorNumeric(palette = "BuPu", domain = stops_routes_short$male_life_exp, reverse = TRUE)
+   
+    mymap <- leaflet(stops_routes_short) %>%
+      addProviderTiles("Stamen.TonerLite") %>%
+      addCircleMarkers(
+        radius = 8, 
+        fillColor = ~pal(male_life_exp),
+        popup = ~glue("route number: route_short_name} operator: {agency_id}<br>
+          {stop_name}<br>
+          Male life expectancy: {male_life_exp}"), 
+        weight = 2, 
+        fillOpacity = 0.8, 
+        color = "black")
+    
+    mymap
+    # output$mymap <- renderLeaflet(mymap)
