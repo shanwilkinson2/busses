@@ -72,12 +72,16 @@ saveWidget(life_exp_map, "life_exp_map.html")
   ui <- dashboardPage(
     dashboardHeader(),
     dashboardSidebar(
-      radioButtons("select_gender", "Select gender", c("male", "female"), selected = "female"),
-      selectInput("select_route_id", "Route ID", unique(stops_routes$route_id))
+      radioButtons("select_gender", 
+                   "Select gender", 
+                   c("male", "female"), 
+                   selected = "female"),
+      selectInput("select_route_id", 
+                  "Route ID", 
+                  unique(stops_routes$route_id))
     ),
     dashboardBody(
-      h1(glue("{selected_gender} life expectancy along a bus route")),
-      # leafletOutput("mymap"),
+      h1("life expectancy along a bus route"),
       leafletOutput("bus_map"),
       tableOutput("table")
     )
@@ -85,8 +89,11 @@ saveWidget(life_exp_map, "life_exp_map.html")
   
   server <- function(input, output) {
   
-  # # selected gender
-  #   selected_gender <- observe{{print(input$select_gender)}}
+  # selected gender
+  # breaks the rest!!!
+    output$which_gender <- reactive({
+      print(input$select_gender)
+    })
       
   # reactive dataset for map & table  
     selected_data <- reactive({
@@ -97,7 +104,7 @@ saveWidget(life_exp_map, "life_exp_map.html")
     })
     
     # interactive map
-       # domain = variable whose range is the range of values  
+       # domain = range of values  
     life_exp_pal <- colorNumeric(palette = "BuPu", 
                                  domain = c(min(stops_routes_joined2$life_exp_val, na.rm = TRUE),
                                             max(stops_routes_joined2$life_exp_val, na.rm = TRUE)), 
@@ -128,83 +135,3 @@ saveWidget(life_exp_map, "life_exp_map.html")
   
   shinyApp(ui, server)
   
-  #############################################
-  
-  library(shiny)
-  library(tidyverse)
-  
-  dat <- tibble(
-    state = c("lak", "cent", "east", "east"),
-    option_1 = c("no", "yes", "no", "yes"),
-    option_2 = c("yes", "yes", "yes", "yes"),
-    option_3 = c("no", "no", "no", "yes"),
-    lat = c(6.87239, 4.01313, 5.00959, 4.77239),
-    lon = c(29.57524, 30.56462, 32.39547, 33.59156)
-  )
-  
-  pal <- colorFactor(
-    palette = c("#FF0000", "green4"),
-    levels = c("no", "yes")
-  )
-  
-  ssd_map <- leaflet() %>%
-    addProviderTiles(providers$CartoDB) %>%
-    setView(lng = 31.2189853,
-            lat = 7.8751893,
-            zoom = 6)
-  
-  # ssd_map <- leaflet() %>%
-  #   addProviderTiles(providers$CartoDB) %>%
-  #   setView(lng = -2.4282,
-  #           lat = 53.5769,
-  #           zoom = 12)
-  
-  ui <- fluidPage(
-    titlePanel("Reprex Map"),
-    
-    mainPanel(
-      varSelectInput(
-        inputId = "option",
-        label = "Options:",
-        data = dat %>% select(starts_with("option_"))
-      ),
-      leafletOutput("map")
-    ))
-  
-  server <- function(input, output) {
-    output$map <- renderLeaflet({
-      ssd_map
-      
-    })
-    
-    observe({
-      leafletProxy("map", data = dat) %>%
-        clearMarkers() %>%
-        addCircleMarkers(data = dat,
-                         color = ~pal(eval(as.symbol(input$option))))
-    })
-  }
-  
-  shinyApp(ui = ui, server = server)
-  
-  ##################
-  
-  # static map
-    pal <- colorNumeric(palette = "BuPu", domain = stops_routes_short$male_life_exp, reverse = TRUE)
-
-  stops_routes_joined %>%
-  filter(route_id == "GTB: 575:O:") %>%
-  leaflet() %>%
-      addProviderTiles("Stamen.TonerLite") %>%
-      addCircleMarkers(
-        radius = 8, 
-        fillColor = ~life_exp_pal(male_life_exp),
-        popup = ~glue("route number: route_short_name} operator: {agency_id}<br>
-          {stop_name}<br>
-          Male life expectancy: {male_life_exp}"), 
-        weight = 2, 
-        fillOpacity = 0.8, 
-        color = "black")
-    
-
-    # output$mymap <- renderLeaflet(mymap)
