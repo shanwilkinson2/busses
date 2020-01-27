@@ -17,55 +17,28 @@
   stops <- st_read("stops_extradata.geojson")
   stops_routes <- st_read("joined_stops_routes.geojson") 
 
- # was going to filter out different operatorts/ in/ out route
-    # but different numbers of stops.
+# In/ out/ different operators have different numbers of stops
   stops_routes %>%
     st_drop_geometry() %>%
     filter(route_short_name ==575) %>%
     group_by(route_id) %>%
     summarise(n())
 
-# join
-  stops_life_exp <- stops %>%
-    st_drop_geometry() %>%
-    select(stop_id, male_life_exp, female_life_exp)
-
-  # test one route only
-  stops_routes_short <- stops_routes %>%
-    filter(route_id == "NOR: 575:O:") # 42 stops
-  stops_routes_short <- stops_routes %>%
-    filter(route_id == "GTB: 575:O:") # 27 stops
-  stops_routes_short <- stops_routes %>%
-    filter(route_id == "GMN: 501:O:")
-  
-  
-  # join
-  stops_routes_short <- 
-    left_join(stops_routes_short, stops_life_exp, by = "stop_id")
-  
+# join stops with stops with life expectancy added
   stops_routes_joined <- 
     left_join(stops_routes, stops_life_exp, by = "stop_id") %>%
     mutate(stop_sequence = as.numeric(stop_sequence))
   
-  # make one life expectancy column instead of two so can filter out unwanted one
+# make one life expectancy column instead of two so can filter out unwanted one
+  # was struggling with switching between columns for colouring & label
   stops_routes_joined2 <- stops_routes_joined %>%
-    gather(key = "life_exp_gender", value = "life_exp_val", c(male_life_exp:female_life_exp)) %>%
-    mutate(life_exp_gender = recode(life_exp_gender, "male_life_exp" = "male", "female_life_exp" = "female"))
-
-# map life expectancy along route selected above
-  # palette reversed so dark = low to emphasise low rather than high 
+    gather(key = "life_exp_gender", value = "life_exp_val", 
+           c(male_life_exp:female_life_exp)) %>%
+    mutate(life_exp_gender = recode(life_exp_gender, "male_life_exp" = "male", 
+                                    "female_life_exp" = "female")) %>%
+    select(route_id, agency_id:route_long_name, stop_id, stop_sequence, stop_name:life_exp_val)
   
-  pal <- colorNumeric(palette = "YlOrRd", domain = stops_routes_short$female_life_exp, reverse = TRUE)
-  mylabel <- glue("route number: {stops_routes_short$route_short_name} operator: {stops_routes_short$agency_id}<br>
-                  {stops_routes_short$stop_name}<br>
-                  Female life expectancy: {stops_routes_short$female_life_exp}")
-  
-life_exp_map <-  leaflet(stops_routes_short) %>%  
-    addProviderTiles("Stamen.TonerLite") %>%
-    addCircleMarkers(radius = 5, fillColor = ~pal(female_life_exp), 
-    popup = ~mylabel, weight = 2, fillOpacity = 0.8, color = "black") 
-
-saveWidget(life_exp_map, "life_exp_map.html")
+  st_write(stops_routes_joined2, "shiny_life_exp_stop.geojson")
   
 ############# shiny dashboard ############
 
@@ -120,7 +93,12 @@ saveWidget(life_exp_map, "life_exp_map.html")
                          popup = ~glue("route number: {route_short_name} operator: {agency_id}<br>
                     {stop_name}<br>
                     {life_exp_gender} life expectancy {life_exp_val}"), 
-                    weight = 2, fillOpacity = 0.8, color = "black")
+                    weight = 2, fillOpacity = 0.8, color = "black") %>%
+          addLegend("bottomleft", pal = life_exp_pal, values = ~life_exp_val,
+                    labFormat = labelFormat(digits = 0), title = "Life expectancy",
+                    opacity = 1) %>%
+          addControl("click on a bus stop to find out more", 
+                     position = "topright")
       )
      
     # table
