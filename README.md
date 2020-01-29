@@ -1,6 +1,8 @@
 # GM busses
 Exploration of bus data from Open Data Manchester digging the data https://www.dropbox.com/sh/4djlyzcdo0ytpcf/AABOIfA4vZyTzkZqbsTUPaFGa?dl=0
 
+**life expectancy by bus route app is here: https://shanwilkinson2.shinyapps.io/life_exp_by_busroute/**
+
 ## files
 ### 01_read_in_files.R
 Read in files from Open Data Manchester's dropbox. Some data transformation (eg to ensure spatial files are read as spatial). 
@@ -15,7 +17,8 @@ It's a journey through several files to see which routes call at which stops. Th
 Add male & female life expectancy (from PHE fingertips) & deprivation (IMD 2019) to bus stops. Also includes MSOA ( Middle Super Output Area - for life expectancy merging) & LSOA (Lower Super Output Area - for IMD merging) & local authority. Produces 'stops_extradata.geojson'. 
 
 ### 05 map stops & routes.R
-Produces an interactive shiny dashboard of life expectancy by route.
+preps an interactive shiny dashboard of life expectancy by route.
+app is here: https://shanwilkinson2.shinyapps.io/life_exp_by_busroute/
 
 ### map_stops.R
 Produces an interactive leaflet map of bus stops. 
