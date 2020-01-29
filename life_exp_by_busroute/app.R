@@ -20,18 +20,18 @@ library(shiny)
 stops_routes_joined2 <- st_read("shiny_life_exp_stop.geojson")
 
 ui <- dashboardPage(
-    dashboardHeader(),
+    dashboardHeader(title = "Life expectancy along bus routes",
+                    titleWidth = 330),
     dashboardSidebar(
         radioButtons("select_gender", 
                      "Select gender", 
                      c("male", "female"), 
                      selected = "female"),
         selectInput("select_route_id", 
-                    "Route ID", 
-                    unique(stops_routes_joined2$route_id))
+                    "Select route:", 
+                    unique(stops_routes_joined2$route_short_long_name))
     ),
     dashboardBody(
-        h1("life expectancy along a bus route"),
         leafletOutput("bus_map"),
         tableOutput("table")
     )
@@ -42,8 +42,8 @@ server <- function(input, output) {
     # reactive dataset for map & table  
     selected_data <- reactive({
         stops_routes_joined2 %>%
-            filter(route_id == input$select_route_id & life_exp_gender == input$select_gender) %>%
-            select(route_short_name, agency_id, route_long_name, stop_name, 
+            filter(route_short_long_name == input$select_route_id & life_exp_gender == input$select_gender) %>%
+            select(route_short_name, agency_id, route_long_name, route_short_long_name, stop_name, 
                    stop_sequence, life_exp_gender, life_exp_val)
     })
     
@@ -61,9 +61,9 @@ server <- function(input, output) {
             addProviderTiles("Stamen.TonerLite") %>%
             addCircleMarkers(radius = 8, 
                              fillColor = ~life_exp_pal(life_exp_val),
-                             popup = ~glue("route number: {route_short_name} operator: {agency_id}<br>
-                    {stop_name}<br>
-                    {life_exp_gender} life expectancy {life_exp_val}"), 
+                             popup = ~glue("<b>Route:</b> {route_short_name} {route_long_name}<br>
+                                            <b>Stop:</b> {stop_name}<br>
+                                <b>{str_to_sentence(life_exp_gender)} life expectancy:</b> {life_exp_val}"), 
                              weight = 2, fillOpacity = 0.8, color = "black") %>%
             addLegend("bottomleft", pal = life_exp_pal, values = ~life_exp_val,
                       labFormat = labelFormat(digits = 0), title = "Life expectancy",
@@ -76,8 +76,10 @@ server <- function(input, output) {
     output$table <- renderTable({
         selected_data() %>%
             st_drop_geometry() %>%
-            select(route_short_name, route_long_name, 
-                   stop_name, life_exp_gender, life_exp_val) %>%
+            ungroup() %>%
+            select(stop_name, life_exp_gender, life_exp_val) %>%
+            filter(life_exp_val == max(life_exp_val, na.rm = TRUE) | 
+                       life_exp_val == min(life_exp_val, na.rm = TRUE)) %>%
             arrange(life_exp_val)
     })
 }
