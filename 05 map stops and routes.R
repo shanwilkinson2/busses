@@ -5,14 +5,7 @@
   library(dplyr)
   library(tidyr)
   library(stringr)
-  library(leaflet)
-  library(RColorBrewer)
-  library(glue)
-  library(shinydashboard)
-  library(htmlwidgets)
-  library(shiny)
 
-  
 # read in files
   stops <- st_read("stops_extradata.geojson")
   stops_routes <- st_read("joined_stops_routes.geojson") 
@@ -27,7 +20,14 @@
 # join stops with stops with life expectancy added
   stops_routes_joined <- 
     left_join(stops_routes, stops_life_exp, by = "stop_id") %>%
-    mutate(stop_sequence = as.numeric(stop_sequence))
+    # wnat to get rid of the multiple operator/ in /outbound versions & just keep longest
+    group_by(route_id) %>%
+    mutate(stop_sequence = as.numeric(stop_sequence), 
+           route_short_long_name = paste(route_short_name, ": ", route_long_name),
+           num_stops = n()) %>%
+    ungroup() %>%
+    group_by(route_short_name) %>%
+    filter(num_stops == max(num_stops))
   
 # make one life expectancy column instead of two so can filter out unwanted one
   # was struggling with switching between columns for colouring & label
@@ -39,5 +39,5 @@
     select(route_id, agency_id:route_long_name, stop_id, stop_sequence, stop_name:life_exp_val)
 
 # save data for shiny app    
-  st_write(stops_routes_joined2, "shiny_life_exp_stop.geojson")
+  st_write(stops_routes_joined2, "life_exp_by_busroute\\shiny_life_exp_stop.geojson")
   

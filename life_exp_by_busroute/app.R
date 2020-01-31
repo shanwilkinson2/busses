@@ -23,22 +23,54 @@ ui <- dashboardPage(
     dashboardHeader(title = "Life expectancy along bus routes",
                     titleWidth = 330),
     dashboardSidebar(
-        radioButtons("select_gender", 
-                     "Select gender", 
-                     c("male", "female"), 
-                     selected = "female"),
-        selectInput("select_route_id", 
-                    "Select route:", 
-                    unique(stops_routes_joined2$route_short_long_name))
+      sidebarMenu(id="tabs",
+                  sidebarMenuOutput("menu")
+      ),
+      radioButtons("select_gender", 
+                   "Select gender", 
+                   c("male", "female"), 
+                   selected = "female"),
+      selectInput("select_route_id", 
+                  "Select route:", 
+                  unique(stops_routes_joined2$route_short_long_name))
     ),
     dashboardBody(
-        leafletOutput("bus_map"),
-        tableOutput("table")
-    )
+        tabItems(
+          # map tab
+          tabItem(tabName = "map",
+            leafletOutput("bus_map"),
+            tableOutput("table")
+          ),
+          # details & sources tab
+          tabItem(tabName = "details",
+            h2("Further information"),
+            p("Code for this app is on my github"),
+            a("Github", href="https://github.com/shanwilkinson2/busses", target = "_blank"),
+            br(),
+            p("Bus data from Open Data Manchester"),
+            a("Open Data Manchester Bus Fare Dropbox", href = "https://www.dropbox.com/sh/4djlyzcdo0ytpcf/AABOIfA4vZyTzkZqbsTUPaFGa?dl=0", 
+               target = "_blank"),
+            br(),
+            p("Life expectancy data from Public Health England Fingertips. Life expectancy at birth 
+              used, at Middle Super Output Area (MSOA) for 2019."),
+            a("PHE Fingertips", href = "https://fingertips.phe.org.uk/search/life%20expectancy#page/0/gid/1/pat/101/par/E08000001/ati/3/are/E02000984", 
+              target = "_blank")
+          )
+        )
+  )
 )
 
-server <- function(input, output) {
+server <- function(input, output, session) {
 
+  # render sidebar menu - needed if reactive stuff on page
+  output$menu <- renderMenu({
+    sidebarMenu(
+      menuItem("Map", tabName = "map", icon = icon("map-signs")),
+      menuItem("Details", tabName = "details", icon = icon("comment-dots"))
+    )
+  })
+  isolate({updateTabItems(session, "tabs", "m1")})
+  
     # reactive dataset for map & table  
     selected_data <- reactive({
         stops_routes_joined2 %>%
