@@ -75,12 +75,15 @@ ui <- dashboardPage(
             p("Code for this app is on my github"),
             a("Github", href="https://github.com/shanwilkinson2/busses", target = "_blank"),
             br(),
+            br(),
             p("Bus data from Open Data Manchester"),
             a("Open Data Manchester Bus Fare Dropbox", href = "https://www.dropbox.com/sh/4djlyzcdo0ytpcf/AABOIfA4vZyTzkZqbsTUPaFGa?dl=0", 
                target = "_blank"),
             br(),
-            p("Life expectancy data from Public Health England Fingertips. Life expectancy at birth 
-              used, at Middle Super Output Area (MSOA) for 2019."),
+            br(),
+            p("Life expectancy data from Public Health England Fingertips, for 2019."),
+            p("Life expectancy at birth used, for the Middle Super Output Area (MSOA) in which the bus stop is located."),
+            p("Life expectancy can be used as a general measure of overall population health."),
             a("PHE Fingertips", href = "https://fingertips.phe.org.uk/search/life%20expectancy#page/0/gid/1/pat/101/par/E08000001/ati/3/are/E02000984", 
               target = "_blank")
           )
