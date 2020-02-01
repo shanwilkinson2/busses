@@ -65,6 +65,10 @@ ui <- dashboardPage(
                 ),
             downloadButton("bttn_data", "Get the data (csv)")
             ),
+          # tab with table of all data
+          tabItem(tabName = "data",
+            DT::DTOutput("table")
+          ),
           # details & sources tab
           tabItem(tabName = "details",
             h2("Further information"),
@@ -90,10 +94,12 @@ server <- function(input, output, session) {
   output$menu <- renderMenu({
     sidebarMenu(
       menuItem("Map", tabName = "map", icon = icon("map-signs")),
+      menuItem("Explore all data", tabName = "data", icon = icon("table")),
       menuItem("Details", tabName = "details", icon = icon("comment-dots"))
     )
   })
-  isolate({updateTabItems(session, "tabs", "m1")})
+  # makes the menu not update itself when other reactive stuff changes
+  isolate({updateTabItems(session, "menu", "map")})
   
     # reactive dataset for map & table  
     selected_data <- reactive({
@@ -174,17 +180,13 @@ server <- function(input, output, session) {
                     , file)
         })
     
-    
-    # # table
-    # output$table <- renderTable({
-    #     selected_data() %>%
-    #         st_drop_geometry() %>%
-    #         ungroup() %>%
-    #         select(stop_name, life_exp_gender, life_exp_val) %>%
-    #         filter(life_exp_val == max(life_exp_val, na.rm = TRUE) | 
-    #                    life_exp_val == min(life_exp_val, na.rm = TRUE)) %>%
-    #         arrange(life_exp_val)
-    # })
+    # table
+    output$table <- DT::renderDT({
+      data = stops_routes_joined2 %>%
+        st_drop_geometry() %>%
+        select("Route number" = route_short_name, "Stop name" = stop_name, 
+               "Gender" = life_exp_gender, "Life expectancy" = life_exp_val)
+    }, filter = "top")
 }
 
 shinyApp(ui, server)
