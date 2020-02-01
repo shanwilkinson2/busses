@@ -17,7 +17,17 @@ library(glue)
 library(shinydashboard)
 library(shiny)
 
+# dataset
 stops_routes_joined2 <- st_read("shiny_life_exp_stop.geojson")
+
+# CSS for download button
+my_css <- "
+  #bttn_data {
+  background: grey;
+  color: white;
+  font-size: 16px;
+  }
+  "
 
 ui <- dashboardPage(
     dashboardHeader(title = "Life expectancy along bus routes",
@@ -35,12 +45,26 @@ ui <- dashboardPage(
                   unique(stops_routes_joined2$route_short_long_name))
     ),
     dashboardBody(
+      tags$style(my_css),
         tabItems(
           # map tab
           tabItem(tabName = "map",
-            leafletOutput("bus_map"),
-            tableOutput("table")
-          ),
+            box(title = "Map",
+                status = "primary",
+                width = 12,
+                solidHeader = TRUE,
+            leafletOutput("bus_map")
+            ),
+            box(title = "Life expectancy on this route",
+                status = "primary",
+                width = 12,
+                solidHeader = TRUE,
+                infoBoxOutput("max_le"),
+                infoBoxOutput("min_le"),
+                infoBoxOutput("diff_le")
+                ),
+            downloadButton("bttn_data", "Get the data (csv)")
+            ),
           # details & sources tab
           tabItem(tabName = "details",
             h2("Further information"),
@@ -104,16 +128,63 @@ server <- function(input, output, session) {
                        position = "topright")
     )
     
-    # table
-    output$table <- renderTable({
-        selected_data() %>%
-            st_drop_geometry() %>%
-            ungroup() %>%
-            select(stop_name, life_exp_gender, life_exp_val) %>%
-            filter(life_exp_val == max(life_exp_val, na.rm = TRUE) | 
-                       life_exp_val == min(life_exp_val, na.rm = TRUE)) %>%
-            arrange(life_exp_val)
+    # max life expectancy info box
+    output$max_le <- renderInfoBox({
+      infoBox(
+        "HIGHEST", 
+        paste(round(
+          max(selected_data()$life_exp_val, na.rm = TRUE)), 
+              "years"), 
+        icon = icon("arrow-circle-up"),
+        color = "light-blue"
+      )
     })
+    
+    # min life expectancy info box
+    output$min_le <- renderInfoBox({
+      infoBox(
+        "LOWEST", 
+        paste(round(
+          min(selected_data()$life_exp_val, na.rm = TRUE)),
+          "years"), 
+        icon = icon("arrow-circle-down"),
+        color = "light-blue"
+      )
+    })
+    
+    # difference in life expectancy info box
+    output$diff_le <- renderInfoBox({
+      infoBox(
+        "DIFFERENCE", 
+        paste(round(
+          max(selected_data()$life_exp_val, na.rm = TRUE) - min(selected_data()$life_exp_val, na.rm = TRUE) 
+          ), 
+              "years"), 
+        icon = icon("exchange-alt"),
+        color = "yellow"
+      )
+    })
+    
+    # generate data for download button
+    output$bttn_data <- downloadHandler(filename = "bus_life_exp.csv",
+        # create file for downloading
+        content = function(file){
+          write.csv(selected_data() %>%
+                      st_drop_geometry()
+                    , file)
+        })
+    
+    
+    # # table
+    # output$table <- renderTable({
+    #     selected_data() %>%
+    #         st_drop_geometry() %>%
+    #         ungroup() %>%
+    #         select(stop_name, life_exp_gender, life_exp_val) %>%
+    #         filter(life_exp_val == max(life_exp_val, na.rm = TRUE) | 
+    #                    life_exp_val == min(life_exp_val, na.rm = TRUE)) %>%
+    #         arrange(life_exp_val)
+    # })
 }
 
 shinyApp(ui, server)
