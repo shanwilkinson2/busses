@@ -49,12 +49,12 @@ ui <- dashboardPage(
         tabItems(
           # map tab
           tabItem(tabName = "map",
-            box(title = "Map",
-                status = "primary",
-                width = 12,
-                solidHeader = TRUE,
-            leafletOutput("bus_map")
-            ),
+            # box(title = "Map",
+            #     status = "primary",
+            #     width = 12,
+            #     solidHeader = TRUE,
+            leafletOutput("bus_map"),
+            # ),
             box(title = "Life expectancy on this route",
                 status = "primary",
                 width = 12,
