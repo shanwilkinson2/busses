@@ -31,6 +31,7 @@ Result of '03_combine_stops_and_routes.R'. One file to show which routes call at
 Result of '04 add variables to stops.R' all bus stops with added male & female life expectancy (from PHE fingertips) & deprivation (IMD 2019). 
 
 ## To do
-* **Shiny dashboard of life expectancy by bus stop along routes.** To include map, summary of loss/ gain along route, which routes have greatest loss/ gain. in progress. 
+* **Shiny dashboard of life expectancy by bus stop along routes.** add a story showing greatest inequality, highest LE, lowest, drivers - PHE segment tool https://www.gov.uk/government/publications/segment-tool-2020-data-update/segment-tool-statistical-commentary-january-2020. 
 * **Fare per km.** Which routes are most expensive? Which boroughs have the most expensive routes? Which routes have the greatest difference between operator? Needs fare data transformed first.  
 * **Is fare influenced by deprivation along the route?** 
+
