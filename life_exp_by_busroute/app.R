@@ -16,11 +16,12 @@ library(RColorBrewer)
 library(glue)
 library(shinydashboard)
 library(shiny)
+library(shinyjs)
 
 # dataset
-stops_routes_joined2 <- st_read("shiny_life_exp_stop.geojson")
+  stops_routes_joined2 <- st_read("shiny_life_exp_stop.geojson")
 
-# CSS for download button
+# CSS for styling of download button
 my_css <- "
   #bttn_data {
   background: grey;
@@ -40,9 +41,13 @@ ui <- dashboardPage(
                    "Select gender", 
                    c("male", "female"), 
                    selected = "female"),
-      selectInput("select_route_id", 
-                  "Select route:", 
-                  unique(stops_routes_joined2$route_short_long_name))
+      # selectize = TRUE makes it so you can type in
+      selectInput(inputId = "select_route_id", 
+                  label = "Select route:  (delete selected option to type & search)", 
+                  choices = sort(unique(stops_routes_joined2$route_short_long_name)),
+                  selectize = TRUE
+                  )
+       
     ),
     dashboardBody(
       tags$style(my_css),
@@ -103,7 +108,7 @@ server <- function(input, output, session) {
   })
   # makes the menu not update itself when other reactive stuff changes
   isolate({updateTabItems(session, "menu", "map")})
-  
+
     # reactive dataset for map & table  
     selected_data <- reactive({
         stops_routes_joined2 %>%
@@ -112,14 +117,14 @@ server <- function(input, output, session) {
                    stop_sequence, life_exp_gender, life_exp_val)
     })
     
-    # interactive map
+  # interactive map
     # domain = range of values  
     life_exp_pal <- colorNumeric(palette = "BuPu", 
                                  domain = c(min(stops_routes_joined2$life_exp_val, na.rm = TRUE),
                                             max(stops_routes_joined2$life_exp_val, na.rm = TRUE)), 
                                  reverse = TRUE)
     
-    
+    # map
     output$bus_map <- renderLeaflet(
         selected_data() %>%
             leaflet() %>%  
