@@ -16,17 +16,43 @@
     filter(route_short_name ==575) %>%
     group_by(route_id) %>%
     summarise(n())
+  
+# duplicate route numbers? - Yes
+# so need to filter by route_short_name & route_long_name not just route_short_name  
+  stops_routes %>%
+    st_drop_geometry() %>%
+    select(route_id: route_long_name, -trip_id) %>%
+    # keep outbound only (remove inbound)
+    filter(str_detect(route_id, ":O:$")) %>%
+    # keep one row per route id only
+    group_by(route_id) %>%
+      slice(1) %>%
+    ungroup() %>%
+    # keep one row per route with same name & number 
+      # (deletes multiple operators over same route)
+    group_by(route_short_name, route_long_name) %>%
+      slice(1) %>%
+    ungroup() %>%
+    group_by(route_short_name) %>%
+      mutate(n = n()) %>%
+    ungroup() %>%
+    arrange(desc(n)) %>%
+    View()
+   
 
 # join stops with stops with life expectancy added
   stops_routes_joined <- 
     left_join(stops_routes, stops_life_exp, by = "stop_id") %>%
     # wnat to get rid of the multiple operator/ in /outbound versions & just keep longest
+    # BUT duplicate route numbers
+    # keep outbound only (remove inbound)
+    filter(str_detect(route_id, ":O:$")) %>%
     group_by(route_id) %>%
     mutate(stop_sequence = as.numeric(stop_sequence), 
            route_short_long_name = paste(route_short_name, ": ", route_long_name),
            num_stops = n()) %>%
     ungroup() %>%
-    group_by(route_short_name) %>%
+    group_by(route_short_name, route_long_name) %>%
     filter(num_stops == max(num_stops))
   
 # make one life expectancy column instead of two so can filter out unwanted one
