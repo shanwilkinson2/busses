@@ -43,11 +43,11 @@ ui <- dashboardPage(
                    selected = "female"),
       # selectize = TRUE makes it so you can type in
       selectInput(inputId = "select_route_id", 
-                  label = "Select route:  (delete selected option to type & search)", 
+                  label = "Select route:", 
                   choices = sort(unique(stops_routes_joined2$route_short_long_name)),
                   selectize = TRUE
-                  )
-       
+                  ),
+      em("(delete selected route to type & search)")
     ),
     dashboardBody(
       tags$style(my_css),
