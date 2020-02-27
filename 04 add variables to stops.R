@@ -55,13 +55,16 @@ stops <- stops %>%
 #############
   
 # import life expectancy
-  # # list of available indicators
-  # indicators() %>%
-  #   filter(IndicatorID == 93283) %>%
-  #   View()
+  # list of available indicators
+  indicators() %>%
+    filter(IndicatorID %in% c(93283, 93285, 93298)) %>%
+    View()
 
   # # list of available areas
   #   indicator_areatypes(IndicatorID = 93283)   
+  # LE upper age band 85+ 	93285
+  # HLE upper age band 85+ only available, no 90+ available. 
+  # upper age groups has more variance so some effects on estimates
 
   # get life expectancy
     # AreaTypeID 3 = MSOA
@@ -73,6 +76,18 @@ stops <- stops %>%
       select(AreaCode, Sex, Value) %>%
       spread(key = Sex, value = Value) %>%
       select(AreaCode, female_life_exp = Female, male_life_exp = Male)
+
+# GOT HERE ####################################################        
+  # get life expectancy, HLE (85+ oldest age grp)
+    # AreaTypeID 3 = MSOA
+    life_exp <- fingertips_data(
+      IndicatorID = c(93285, 93298), 
+      ProfileID = 143, 
+      AreaTypeID = 3) # %>%    
+      # filter(AreaType == "MSOA") %>%
+      # select(AreaCode, Sex, Value) %>%
+      # spread(key = Sex, value = Value) %>%
+      # select(AreaCode, female_life_exp = Female, male_life_exp = Male)  
  
   # merge in life expectancy
     stops <- left_join(stops, life_exp, by = c("msoa11cd" = "AreaCode"))
