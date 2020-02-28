@@ -77,16 +77,22 @@ stops <- stops %>%
       spread(key = Sex, value = Value) %>%
       select(AreaCode, female_life_exp = Female, male_life_exp = Male)
 
-# GOT HERE ####################################################        
+# GOT HERE - NOT WORKING YET ####################################################        
   # get life expectancy, HLE (85+ oldest age grp)
     # AreaTypeID 3 = MSOA
-    life_exp <- fingertips_data(
-      IndicatorID = c(93285, 93298), 
-      ProfileID = 143, 
-      AreaTypeID = 3) # %>%    
-      # filter(AreaType == "MSOA") %>%
-      # select(AreaCode, Sex, Value) %>%
-      # spread(key = Sex, value = Value) %>%
+    life_exp <- 
+      fingertips_data(
+        IndicatorID = c(93285, 93298), 
+        ProfileID = 143, 
+        AreaTypeID = 3)  %>%    
+      filter(AreaType == "MSOA") %>%
+      select(AreaCode, IndicatorID, Sex, Value) %>%
+      pivot_wider(id_cols = c(AreaCode, Sex), 
+                  names_from = IndicatorID, values_from = Value) %>%
+      rename(le = 93285, hle = 93298) %>%
+      mutate(not_good_health = le-hle)
+      
+
       # select(AreaCode, female_life_exp = Female, male_life_exp = Male)  
  
   # merge in life expectancy
