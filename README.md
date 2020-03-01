@@ -16,8 +16,8 @@ It's a journey through several files to see which routes call at which stops. Th
 ### 04 add variables to stops.R
 Add male & female life expectancy (from PHE fingertips) & deprivation (IMD 2019) to bus stops. Also includes MSOA ( Middle Super Output Area - for life expectancy merging) & LSOA (Lower Super Output Area - for IMD merging) & local authority. Produces 'stops_extradata.geojson'. 
 
-### 05 map stops & routes.R
-preps an interactive shiny dashboard of life expectancy by route.
+### 05 prep data for app.R
+preps data for an interactive shiny dashboard of life expectancy by route.
 app is here: https://shanwilkinson2.shinyapps.io/life_exp_by_busroute/
 
 ### map_stops.R
