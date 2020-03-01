@@ -19,7 +19,7 @@ library(shiny)
 library(shinyjs)
 
 # dataset
-  stops_routes_joined2 <- st_read("shiny_life_exp_stop.geojson")
+  stops_routes_joined2 <- readRDS("data/stops_routes_joined2.rds")
 
 # CSS for styling of download button
 my_css <- "
@@ -124,23 +124,29 @@ server <- function(input, output, session) {
                                             max(stops_routes_joined2$life_exp_val, na.rm = TRUE)), 
                                  reverse = TRUE)
     
+  
+    
     # map
-    output$bus_map <- renderLeaflet(
+    output$bus_map <- renderLeaflet({
+      myLabels = as.list(glue("<b>Route:</b> {selected_data()$route_short_name} {selected_data()$route_long_name}<br>
+                                            <b>Stop:</b> {selected_data()$stop_name}<br>
+                                <b>{str_to_sentence(selected_data()$life_exp_gender)} life expectancy:</b> {selected_data()$life_exp_val}"))
         selected_data() %>%
             leaflet() %>%  
             addProviderTiles("Stamen.TonerLite") %>%
             addCircleMarkers(radius = 8, 
                              fillColor = ~life_exp_pal(life_exp_val),
-                             popup = ~glue("<b>Route:</b> {route_short_name} {route_long_name}<br>
-                                            <b>Stop:</b> {stop_name}<br>
-                                <b>{str_to_sentence(life_exp_gender)} life expectancy:</b> {life_exp_val}"), 
+                             # popup = ~glue("<b>Route:</b> {route_short_name} {route_long_name}<br>
+                             #                <b>Stop:</b> {stop_name}<br>
+                             #    <b>{str_to_sentence(life_exp_gender)} life expectancy:</b> {life_exp_val}"), 
+                             label = lapply(myLabels, HTML),
                              weight = 2, fillOpacity = 0.8, color = "black") %>%
             addLegend("bottomleft", pal = life_exp_pal, values = ~life_exp_val,
                       labFormat = labelFormat(digits = 0), title = "Life expectancy",
                       opacity = 1) %>%
             addControl("click on a bus stop to find out more", 
                        position = "topright")
-    )
+    })
     
     # max life expectancy info box
     output$max_le <- renderInfoBox({

@@ -89,10 +89,9 @@ stops <- stops %>%
       select(AreaCode, IndicatorID, Sex, Value) %>%
       pivot_wider(id_cols = c(AreaCode, Sex), 
                   names_from = IndicatorID, values_from = Value) %>%
-      rename(le = 93285, hle = 93298) %>%
+      rename(le = "93285", hle = "93298") %>%
       mutate(not_good_health = le-hle)
-      
-
+    
       # select(AreaCode, female_life_exp = Female, male_life_exp = Male)  
  
   # merge in life expectancy
