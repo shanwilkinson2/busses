@@ -1,4 +1,5 @@
-# map stops & routes
+# prep data for app
+# stops & routes with life expectancy data
 
 # load packages
   library(sf)
@@ -41,8 +42,9 @@
    
 
 # join stops with stops with life expectancy added
+  #### GETTING DUPLICATE OF STOP INFO
   stops_routes_joined <- 
-    left_join(stops_routes, stops_life_exp, by = "stop_id") %>%
+    left_join(stops_routes, st_drop_geometry(stops), by = "stop_id") %>%
     # wnat to get rid of the multiple operator/ in /outbound versions & just keep longest
     # BUT duplicate route numbers
     # keep outbound only (remove inbound)
@@ -63,6 +65,15 @@
     mutate(life_exp_gender = recode(life_exp_gender, "male_life_exp" = "male", 
                                     "female_life_exp" = "female")) %>%
     select(route_id, agency_id:route_long_name, stop_id, stop_sequence, stop_name:life_exp_val)
+
+##########
+  # pivot so one gender col, & one stat col 
+    # was struggling with switching between columns for colouring & label
+  stops_routes_joined3 <- stops_routes_joined %>%
+    # pivot_longer(cols = le_male:le_female, 
+    #              names_to = "life_exp_stat", values_to = "life_exp_val")
+    gather(key = "life_exp_gender", value = "life_exp_val",
+           c(le_male:not_good_health_female))
 
 # save data for shiny app    
   st_write(stops_routes_joined2, "life_exp_by_busroute\\shiny_life_exp_stop.geojson")
