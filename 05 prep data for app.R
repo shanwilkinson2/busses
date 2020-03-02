@@ -8,17 +8,21 @@
   library(stringr)
 
 # read in files
-  stops <- st_read("stops_extradata.geojson")
-  stops_routes <- st_read("joined_stops_routes.geojson") 
+  stops <- st_read("stops_extradata.geojson") %>%
+    st_drop_geometry() %>%
+    select(stop_id, le_male:not_good_health_female)
+  
+  stops_routes <- st_read("joined_stops_routes.geojson") %>%
+    select(-c(trip_id, route_type:departure_time, pickup_type:drop_off_type))
 
-# In/ out/ different operators have different numbers of stops
+# check if in/ out/ different operators have different numbers of stops
   stops_routes %>%
     st_drop_geometry() %>%
     filter(route_short_name ==575) %>%
     group_by(route_id) %>%
     summarise(n())
   
-# duplicate route numbers? - Yes
+# check if duplicate route numbers? - Yes
 # so need to filter by route_short_name & route_long_name not just route_short_name  
   stops_routes %>%
     st_drop_geometry() %>%
@@ -42,9 +46,8 @@
    
 
 # join stops with stops with life expectancy added
-  #### GETTING DUPLICATE OF STOP INFO
   stops_routes_joined <- 
-    left_join(stops_routes, st_drop_geometry(stops), by = "stop_id") %>%
+    left_join(stops_routes, stops, by = "stop_id") %>%
     # wnat to get rid of the multiple operator/ in /outbound versions & just keep longest
     # BUT duplicate route numbers
     # keep outbound only (remove inbound)
@@ -57,24 +60,22 @@
     group_by(route_short_name, route_long_name) %>%
     filter(num_stops == max(num_stops))
   
-# make one life expectancy column instead of two so can filter out unwanted one
-  # was struggling with switching between columns for colouring & label
-  stops_routes_joined2 <- stops_routes_joined %>%
-    gather(key = "life_exp_gender", value = "life_exp_val", 
-           c(male_life_exp:female_life_exp)) %>%
-    mutate(life_exp_gender = recode(life_exp_gender, "male_life_exp" = "male", 
-                                    "female_life_exp" = "female")) %>%
-    select(route_id, agency_id:route_long_name, stop_id, stop_sequence, stop_name:life_exp_val)
+  # remove pre-merge files, as now merged
+    rm(stops)
+    rm(stops_routes)
 
-##########
-  # pivot so one gender col, & one stat col 
+  # pivot so one gender col, one stat col, one value col 
     # was struggling with switching between columns for colouring & label
-  stops_routes_joined3 <- stops_routes_joined %>%
-    # pivot_longer(cols = le_male:le_female, 
-    #              names_to = "life_exp_stat", values_to = "life_exp_val")
-    gather(key = "life_exp_gender", value = "life_exp_val",
-           c(le_male:not_good_health_female))
-
+  stops_routes_joined2 <- stops_routes_joined %>%
+    # can't get pivot_longer to work but gather works ok.
+    gather(key = "life_exp_stat", value = "life_exp_val",
+           le_male:not_good_health_female) %>%
+    mutate(life_exp_stat =  str_replace(life_exp_stat, 
+                                        "not_good_health", "notgoodhealth")) %>%
+    separate(col = life_exp_stat, 
+             into = c("life_exp_stat", "life_exp_gender"), 
+             sep = "_")
+   
 # save data for shiny app    
-  st_write(stops_routes_joined2, "life_exp_by_busroute\\shiny_life_exp_stop.geojson")
-  
+  # rds file super much smaller than geojson also R doesn't need to translate it
+  saveRDS(stops_routes_joined2, "life_exp_by_busroute\\shiny_life_exp_stop.rds")
