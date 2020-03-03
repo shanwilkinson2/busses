@@ -19,7 +19,7 @@ library(shiny)
 library(shinyjs)
 
 # dataset
-  stops_routes_joined2 <- readRDS("data/stops_routes_joined2.rds")
+  stops_routes_joined2 <- readRDS("shiny_life_exp_stop.rds")
 
 # CSS for styling of download button
 my_css <- "
@@ -41,6 +41,12 @@ ui <- dashboardPage(
                    "Select gender", 
                    c("male", "female"), 
                    selected = "female"),
+      radioButtons("select_stat", 
+                   "Select measure", 
+                   c("Life expectancy" = "le",
+                     "Healthy life expectancy" = "hle",
+                     "Years not in good health" = "notgoodhealth"), 
+                   selected = "le"),
       # selectize = TRUE makes it so you can type in
       selectInput(inputId = "select_route_id", 
                   label = "Select route:", 
@@ -60,7 +66,8 @@ ui <- dashboardPage(
             #     solidHeader = TRUE,
             leafletOutput("bus_map"),
             # ),
-            box(title = "Life expectancy on this route",
+            # TO DO - MAKE TITLE REFLECT SELECTED STAT ##################
+            box(title = "On this route...",
                 status = "primary",
                 width = 12,
                 solidHeader = TRUE,
@@ -112,40 +119,52 @@ server <- function(input, output, session) {
     # reactive dataset for map & table  
     selected_data <- reactive({
         stops_routes_joined2 %>%
-            filter(route_short_long_name == input$select_route_id & life_exp_gender == input$select_gender) %>%
+            filter(route_short_long_name == input$select_route_id & 
+                     life_exp_gender == input$select_gender &
+                     life_exp_stat == input$select_stat) %>%
             select(route_short_name, agency_id, route_long_name, route_short_long_name, stop_name, 
                    stop_sequence, life_exp_gender, life_exp_val)
     })
     
   # interactive map
     # domain = range of values  
-    life_exp_pal <- colorNumeric(palette = "BuPu", 
-                                 domain = c(min(stops_routes_joined2$life_exp_val, na.rm = TRUE),
-                                            max(stops_routes_joined2$life_exp_val, na.rm = TRUE)), 
+    # TO DO - FLIP COLOUR PALATTE FOR YEARS IN NOT GOOD HEALTH ################
+    life_exp_pal <- reactive({
+        colorNumeric(palette = "BuPu", 
+                                 domain = c(min(selected_data()$life_exp_val, na.rm = TRUE),
+                                            max(selected_data()$life_exp_val, na.rm = TRUE)), 
                                  reverse = TRUE)
+    })
     
   
     
     # map
     output$bus_map <- renderLeaflet({
+      # TO DO - TEXT SEEMS A BIT SMALL ################
+      # TO DO - STAT IS SHORTENED VERSION OF NAME CHANGE TO LONGER (IE LE / LIFE EXPECTANCY)
       myLabels = as.list(glue("<b>Route:</b> {selected_data()$route_short_name} {selected_data()$route_long_name}<br>
                                             <b>Stop:</b> {selected_data()$stop_name}<br>
-                                <b>{str_to_sentence(selected_data()$life_exp_gender)} life expectancy:</b> {selected_data()$life_exp_val}"))
+                                <b>{str_to_sentence(selected_data()$life_exp_gender)} {input$select_stat}:</b> {selected_data()$life_exp_val}"))
         selected_data() %>%
             leaflet() %>%  
             addProviderTiles("Stamen.TonerLite") %>%
             addCircleMarkers(radius = 8, 
-                             fillColor = ~life_exp_pal(life_exp_val),
+                             fillColor = ~life_exp_pal()(life_exp_val),
                              # popup = ~glue("<b>Route:</b> {route_short_name} {route_long_name}<br>
                              #                <b>Stop:</b> {stop_name}<br>
                              #    <b>{str_to_sentence(life_exp_gender)} life expectancy:</b> {life_exp_val}"), 
                              label = lapply(myLabels, HTML),
                              weight = 2, fillOpacity = 0.8, color = "black") %>%
-            addLegend("bottomleft", pal = life_exp_pal, values = ~life_exp_val,
+            addLegend("bottomleft", pal = life_exp_pal(), values = ~life_exp_val,
                       labFormat = labelFormat(digits = 0), title = "Life expectancy",
                       opacity = 1) %>%
             addControl("click on a bus stop to find out more", 
                        position = "topright")
+    })
+    
+    # info box caption 
+    output$infobox_caption <- reactive({
+      paste(input$select_stat, "on this route")
     })
     
     # max life expectancy info box
