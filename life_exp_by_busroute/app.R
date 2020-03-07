@@ -19,7 +19,7 @@ library(shiny)
 library(shinyjs)
 
 # dataset
-  stops_routes_joined2 <- st_read("shiny_life_exp_stop.geojson")
+  stops_routes_joined2 <- readRDS("shiny_life_exp_stop.rds")
 
 # CSS for styling of download button
 my_css <- "
@@ -41,6 +41,12 @@ ui <- dashboardPage(
                    "Select gender", 
                    c("male", "female"), 
                    selected = "female"),
+      radioButtons("select_stat", 
+                   "Select measure", 
+                   c("life expectancy",
+                     "healthy life expectancy",
+                     "years not in good health"), 
+                   selected = "life expectancy"),
       # selectize = TRUE makes it so you can type in
       selectInput(inputId = "select_route_id", 
                   label = "Select route:", 
@@ -60,7 +66,7 @@ ui <- dashboardPage(
             #     solidHeader = TRUE,
             leafletOutput("bus_map"),
             # ),
-            box(title = "Life expectancy on this route",
+            box(title = textOutput("selected_stat"), #"on this route",
                 status = "primary",
                 width = 12,
                 solidHeader = TRUE,
@@ -77,20 +83,34 @@ ui <- dashboardPage(
           # details & sources tab
           tabItem(tabName = "details",
             h2("Further information"),
-            p("Code for this app is on my github"),
-            a("Github", href="https://github.com/shanwilkinson2/busses", target = "_blank"),
+            br(),
+            h3("What does this app show?"),
+            p("This app is intended to visualise the differences in life expectancy and healthy life expectancy that can be seen over relatively short distances."),
+            p("Life expectancy is number of years a baby born today from a particular area can expect to live. It can be used as a general measure of overall population health."),
+            p("We can't live for ever, but is it fair that people from some areas can expect so many years more life than people from other areas? We would want to narrow the gap from what it is today."),
+            p("Healthy life expectancy is the number of years a baby born today in a particular area can expect to live in good health. This refers to self rated health, but self rated health is a good predictor of service usage."),
+            p("Years not in good health is the difference between the two."),
+            p("We would want to increase the proportion of people's lives that is spent in good health so they have the health to do what they want to do as long as possible, and also to reduce the cost of intensive health and social care that is often necessary where people experience a prolonged period of very poor health right at the end of their lives."),
+            p("To find out more about the reasons behind the inequalities in life expectancy, take a look at Public Health England's Segment Tool."),
+            a("PHE Segment Tool", href = "https://analytics.phe.gov.uk/apps/segment-tool/", 
+              target = "_blank"),
             br(),
             br(),
+            h2("Data sources"),
             p("Bus data from Open Data Manchester"),
             a("Open Data Manchester Bus Fare Dropbox", href = "https://www.dropbox.com/sh/4djlyzcdo0ytpcf/AABOIfA4vZyTzkZqbsTUPaFGa?dl=0", 
                target = "_blank"),
             br(),
             br(),
-            p("Life expectancy data from Public Health England Fingertips, for 2019."),
-            p("Life expectancy at birth used, for the Middle Super Output Area (MSOA) in which the bus stop is located."),
-            p("Life expectancy can be used as a general measure of overall population health."),
+            p("Life expectancy data from Public Health England Fingertips, 2018 issue (the latest) which is based on data relating to the period 2009-2013."),
+            p("Life expectancy at birth & healthy life expectancy used (upper age band 85+), for the Middle Super Output Area (MSOA) in which the bus stop is located."),
+            p("Years not in good health is calculated as the difference between the two."),
             a("PHE Fingertips", href = "https://fingertips.phe.org.uk/search/life%20expectancy#page/0/gid/1/pat/101/par/E08000001/ati/3/are/E02000984", 
-              target = "_blank")
+              target = "_blank"),
+            br(),
+            br(),
+            p("Code for this app is on my github"),
+            a("Github", href="https://github.com/shanwilkinson2/busses", target = "_blank")
           )
         )
   )
@@ -112,35 +132,55 @@ server <- function(input, output, session) {
     # reactive dataset for map & table  
     selected_data <- reactive({
         stops_routes_joined2 %>%
-            filter(route_short_long_name == input$select_route_id & life_exp_gender == input$select_gender) %>%
+            filter(route_short_long_name == input$select_route_id & 
+                     life_exp_gender == input$select_gender &
+                     life_exp_stat == input$select_stat) %>%
             select(route_short_name, agency_id, route_long_name, route_short_long_name, stop_name, 
                    stop_sequence, life_exp_gender, life_exp_val)
     })
     
+  # name of selected stat
+    output$selected_stat <- renderText({input$select_stat})
+    
   # interactive map
     # domain = range of values  
-    life_exp_pal <- colorNumeric(palette = "BuPu", 
-                                 domain = c(min(stops_routes_joined2$life_exp_val, na.rm = TRUE),
-                                            max(stops_routes_joined2$life_exp_val, na.rm = TRUE)), 
-                                 reverse = TRUE)
+    life_exp_pal <- reactive({
+                   colorNumeric(palette = "BuPu", 
+                          domain = c(min(selected_data()$life_exp_val, na.rm = TRUE),
+                                     max(selected_data()$life_exp_val, na.rm = TRUE)), 
+                          reverse = ifelse(input$select_stat == "years not in good health", FALSE, TRUE)
+    )
+            })
+    
+  
     
     # map
-    output$bus_map <- renderLeaflet(
+    output$bus_map <- renderLeaflet({
+      # TO DO - TEXT SEEMS A BIT SMALL ################
+      myLabels = as.list(glue("<b>Route:</b> {selected_data()$route_short_name} {selected_data()$route_long_name}<br>
+                                            <b>Stop:</b> {selected_data()$stop_name}<br>
+                                <b>{str_to_sentence(selected_data()$life_exp_gender)} {input$select_stat}:</b> {selected_data()$life_exp_val}"))
         selected_data() %>%
             leaflet() %>%  
             addProviderTiles("Stamen.TonerLite") %>%
             addCircleMarkers(radius = 8, 
-                             fillColor = ~life_exp_pal(life_exp_val),
-                             popup = ~glue("<b>Route:</b> {route_short_name} {route_long_name}<br>
-                                            <b>Stop:</b> {stop_name}<br>
-                                <b>{str_to_sentence(life_exp_gender)} life expectancy:</b> {life_exp_val}"), 
+                             fillColor = ~life_exp_pal()(life_exp_val),
+                             # popup = ~glue("<b>Route:</b> {route_short_name} {route_long_name}<br>
+                             #                <b>Stop:</b> {stop_name}<br>
+                             #    <b>{str_to_sentence(life_exp_gender)} life expectancy:</b> {life_exp_val}"), 
+                             label = lapply(myLabels, HTML),
                              weight = 2, fillOpacity = 0.8, color = "black") %>%
-            addLegend("bottomleft", pal = life_exp_pal, values = ~life_exp_val,
-                      labFormat = labelFormat(digits = 0), title = "Life expectancy",
+            addLegend("bottomleft", pal = life_exp_pal(), values = ~life_exp_val,
+                      labFormat = labelFormat(digits = 0), title = input$select_stat,
                       opacity = 1) %>%
             addControl("click on a bus stop to find out more", 
                        position = "topright")
-    )
+    })
+    
+    # info box caption 
+    output$infobox_caption <- reactive({
+      paste(input$select_stat, "on this route")
+    })
     
     # max life expectancy info box
     output$max_le <- renderInfoBox({
@@ -192,9 +232,9 @@ server <- function(input, output, session) {
     output$table <- DT::renderDT({
       data = stops_routes_joined2 %>%
         st_drop_geometry() %>%
-        select("Route number" = route_short_name, "Stop name" = stop_name, 
-               "Gender" = life_exp_gender, "Life expectancy" = life_exp_val)
-    }, filter = "top")
+        select("Route number" = route_short_name, "Stop name" = stop_name, "Statistic" = life_exp_stat,
+               "Gender" = life_exp_gender, "Value" = life_exp_val)
+    }, filter = "top", rownames = FALSE)
 }
 
 shinyApp(ui, server)

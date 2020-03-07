@@ -7,13 +7,13 @@
 #################
 
 # load packages
-library(readr)
-library(dplyr)
-library(sf)
-library(openxlsx)
-library(janitor)
-library(fingertipsR)
-library(tidyr)
+  library(readr)
+  library(dplyr)
+  library(sf)
+  library(openxlsx)
+  library(janitor)
+  library(fingertipsR)
+  library(tidyr)
 
 # bus stops
   stops <- read_csv("https://www.dropbox.com/sh/4djlyzcdo0ytpcf/AADMaJKBTuHlp5jdXBmgRT8ya/gtdf-out/stops.txt?dl=1") %>%
@@ -55,27 +55,56 @@ stops <- stops %>%
 #############
   
 # import life expectancy
-  # # list of available indicators
-  # indicators() %>%
-  #   filter(IndicatorID == 93283) %>%
-  #   View()
+  # list of available indicators
+  indicators() %>%
+    filter(IndicatorID %in% c(93283, 93285, 93298)) %>%
+    View()
 
   # # list of available areas
   #   indicator_areatypes(IndicatorID = 93283)   
+  #   LE upper age band 85+ 	93285
+  #   HLE upper age band 85+ only available, no 90+ available. 
+  #   upper age groups has more variance so some effects on estimates
 
-  # get life expectancy
+  # # get life expectancy - only
+  #   # AreaTypeID 3 = MSOA
+  #   life_exp <- fingertips_data(
+  #       IndicatorID = 93283, 
+  #       ProfileID = 143, 
+  #       AreaTypeID = 3) %>%    
+  #     filter(AreaType == "MSOA") %>%
+  #     select(AreaCode, Sex, Value) %>%
+  #     spread(key = Sex, value = Value) %>%
+  #     select(AreaCode, female_life_exp = Female, male_life_exp = Male)
+
+  # get life expectancy, HLE (85+ oldest age grp)
     # AreaTypeID 3 = MSOA
-    life_exp <- fingertips_data(
-        IndicatorID = 93283, 
-        ProfileID = 143, 
-        AreaTypeID = 3) %>%    
-      filter(AreaType == "MSOA") %>%
-      select(AreaCode, Sex, Value) %>%
-      spread(key = Sex, value = Value) %>%
-      select(AreaCode, female_life_exp = Female, male_life_exp = Male)
- 
+    life_exp <- 
+      # get data from PHE fingertips
+        fingertips_data(
+          IndicatorID = c(93285, 93298), 
+          ProfileID = 143, 
+          AreaTypeID = 3)  %>%   
+      # keep MSOA level only (smallest available)
+        filter(AreaType == "MSOA") %>%
+      # reduce number of variables
+        select(AreaCode, IndicatorID, Sex, Value) %>%
+      # put LE/ HLE in columns
+        pivot_wider(id_cols = c(AreaCode, Sex), 
+                    names_from = IndicatorID, values_from = Value) %>%
+      # change col names from number to short name
+        rename(le = "93285", hle = "93298") %>%
+      # calculate years not in good health 
+      # ie difference between life expectancy & healthy life expectancy
+        mutate(not_good_health = le-hle) %>%
+      # pivot so only 1 row per MSOA
+        pivot_wider(id_cols = AreaCode, 
+                    names_from = c(Sex), 
+                    values_from = c(le:not_good_health)) %>%
+      clean_names()
+    
   # merge in life expectancy
-    stops <- left_join(stops, life_exp, by = c("msoa11cd" = "AreaCode"))
+    stops <- left_join(stops, life_exp, by = c("msoa11cd" = "area_code"))
     
 ##########
     
