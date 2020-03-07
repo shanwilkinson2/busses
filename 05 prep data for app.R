@@ -74,7 +74,13 @@
                                         "not_good_health", "notgoodhealth")) %>%
     separate(col = life_exp_stat, 
              into = c("life_exp_stat", "life_exp_gender"), 
-             sep = "_")
+             sep = "_") %>%
+    mutate(life_exp_stat =  str_replace(life_exp_stat, 
+                                        "notgoodhealth", "years not in good health"),
+           life_exp_stat =  str_replace(life_exp_stat, 
+                                        "hle", "healthy life expectancy"),
+           life_exp_stat =  str_replace(life_exp_stat, 
+                                        "le", "life expectancy"))
    
 # save data for shiny app    
   # rds file super much smaller than geojson also R doesn't need to translate it
