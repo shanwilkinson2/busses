@@ -26,7 +26,8 @@
 # so need to filter by route_short_name & route_long_name not just route_short_name  
   stops_routes %>%
     st_drop_geometry() %>%
-    select(route_id: route_long_name, -trip_id) %>%
+    select(route_id: route_long_name #, -trip_id
+           ) %>%
     # keep outbound only (remove inbound)
     filter(str_detect(route_id, ":O:$")) %>%
     # keep one row per route id only
@@ -70,18 +71,27 @@
     # can't get pivot_longer to work but gather works ok.
     gather(key = "life_exp_stat", value = "life_exp_val",
            le_male:not_good_health_female) %>%
+    # keep only one underscore to separate on it
     mutate(life_exp_stat =  str_replace(life_exp_stat, 
                                         "not_good_health", "notgoodhealth")) %>%
     separate(col = life_exp_stat, 
              into = c("life_exp_stat", "life_exp_gender"), 
              sep = "_") %>%
+    # change names so look nice for app
     mutate(life_exp_stat =  str_replace(life_exp_stat, 
                                         "notgoodhealth", "years not in good health"),
            life_exp_stat =  str_replace(life_exp_stat, 
                                         "hle", "healthy life expectancy"),
            life_exp_stat =  str_replace(life_exp_stat, 
-                                        "le", "life expectancy"))
+                                        "le", "life expectancy"), 
+    # make gender & stat factors
+            life_exp_stat = as.factor(life_exp_stat),
+            life_exp_gender = as.factor(life_exp_gender)
+    )
    
+  # remove stops_routes_joined as have v2 now
+  rm(stops_routes_joined)
+  
 # save data for shiny app    
   # rds file super much smaller than geojson also R doesn't need to translate it
   saveRDS(stops_routes_joined2, "life_exp_by_busroute\\shiny_life_exp_stop.rds")

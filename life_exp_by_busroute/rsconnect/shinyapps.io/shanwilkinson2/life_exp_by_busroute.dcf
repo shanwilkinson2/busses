@@ -5,6 +5,8 @@ account: shanwilkinson2
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 1721280
-bundleId: 2860184
+bundleId: 4556962
 url: https://shanwilkinson2.shinyapps.io/life_exp_by_busroute/
-when: 1583609703.21359
+when: 1620154890.43598
+asMultiple: FALSE
+asStatic: FALSE

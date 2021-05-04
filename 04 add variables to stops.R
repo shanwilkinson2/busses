@@ -109,6 +109,6 @@ stops <- stops %>%
 ##########
     
     # export joined file
-    st_write(stops, "stops_extradata.geojson")
+    st_write(stops, "stops_extradata.geojson", delete_dsn = TRUE)
     
   
