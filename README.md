@@ -35,3 +35,4 @@ Result of '04 add variables to stops.R' all bus stops with added male & female l
 * **Fare per km.** Which routes are most expensive? Which boroughs have the most expensive routes? Which routes have the greatest difference between operator? Needs fare data transformed first.  
 * **Is fare influenced by deprivation along the route?** 
 
+more up to date bus route info: https://data.gov.uk/dataset/c3ca6469-7955-4a57-8bfc-58ef2361b797/gm-public-transport-schedules-new-gtfs-dataset
