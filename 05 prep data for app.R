@@ -48,7 +48,7 @@
 
 # join stops with stops with life expectancy added
   stops_routes_joined <- 
-    left_join(stops_routes, stops, by = "stop_id") %>%
+    left_join(stops_routes, st_drop_geometry(stops), by = c("stop_id", "stop_name")) %>%
     # wnat to get rid of the multiple operator/ in /outbound versions & just keep longest
     # BUT duplicate route numbers
     # keep outbound only (remove inbound)
@@ -91,6 +91,8 @@
    
   # remove stops_routes_joined as have v2 now
   rm(stops_routes_joined)
+  
+  # for when have added 
   
 # save data for shiny app    
   # rds file super much smaller than geojson also R doesn't need to translate it
