@@ -157,10 +157,9 @@ server <- function(input, output, session) {
     
     # map
     output$bus_map <- renderLeaflet({
-      # TO DO - TEXT SEEMS A BIT SMALL ################
-      myLabels = as.list(glue("<b>Route:</b> {selected_data()$route_short_name} {selected_data()$route_long_name}<br>
+        myLabels = as.list(glue("<b>Route:</b> {selected_data()$route_short_name} {selected_data()$route_long_name}<br>
                                             <b>Stop:</b> {selected_data()$stop_name}<br>
-                                <b>{str_to_sentence(selected_data()$life_exp_gender)} {input$select_stat}:</b> {selected_data()$life_exp_val}"))
+                                <b>{str_to_sentence(selected_data()$life_exp_gender)} {input$select_stat}:</b> {round(selected_data()$life_exp_val, 1)}"))
         selected_data() %>%
             leaflet() %>%  
             addProviderTiles("Stamen.TonerLite") %>%

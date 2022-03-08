@@ -70,7 +70,7 @@
   stops_routes_joined2 <- stops_routes_joined %>%
     # can't get pivot_longer to work but gather works ok.
     gather(key = "life_exp_stat", value = "life_exp_val",
-           le_male:not_good_health_female) %>%
+           hle_male:not_good_health_female) %>%
     # keep only one underscore to separate on it
     mutate(life_exp_stat =  str_replace(life_exp_stat, 
                                         "not_good_health", "notgoodhealth")) %>%
