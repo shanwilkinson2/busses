@@ -60,12 +60,8 @@ ui <- dashboardPage(
         tabItems(
           # map tab
           tabItem(tabName = "map",
-            # box(title = "Map",
-            #     status = "primary",
-            #     width = 12,
-            #     solidHeader = TRUE,
-            leafletOutput("bus_map"),
-            # ),
+            # adjusts height of map to be full window minus some for header + box at bottom
+            tags$style(type = "text/css", "#bus_map {height: calc(100vh - 250px) !important;}"),
             box(title = textOutput("selected_stat"), #"on this route",
                 status = "primary",
                 width = 12,
@@ -73,7 +69,10 @@ ui <- dashboardPage(
                 infoBoxOutput("max_le"),
                 infoBoxOutput("min_le"),
                 infoBoxOutput("diff_le")
-                ),
+            ),
+            leafletOutput("bus_map"),
+            # ),
+
             downloadButton("bttn_data", "Get the data (csv)")
             ),
           # tab with table of all data
@@ -103,7 +102,7 @@ ui <- dashboardPage(
             p("Bus routes are no longer completely up to date, but are still useful to show how life expectancy changes over relatively small areas."),
             br(),
             p("Healthy Life expectancy data is from Public Health England Fingertips, 2020 issue which is based on data relating to the period 2013-2017, however this is no longer available from this source."),
-            p("Life expectancy data is from Public Health England Fingertips, 2021 issue which is based on data relating to the period 2015-2019."),
+            p("Life expectancy data is from Public Health England Fingertips, 2022 issue which is based on data relating to the period 2016-2020."),
             p("Life expectancy at birth & healthy life expectancy used (upper age band 85+), for the Middle Super Output Area (MSOA) in which the bus stop is located."),
             p("Years not in good health is calculated as the difference between the two. Since these now relate to different time periods, caution must be used when interpreting this information."),
             a("PHE Fingertips", href = "https://fingertips.phe.org.uk/search/life%20expectancy#page/0/gid/1/pat/101/par/E08000001/ati/3/are/E02000984", 
