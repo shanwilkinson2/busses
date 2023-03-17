@@ -56,6 +56,7 @@ stops <- stops %>%
   
 # import life expectancy
   # list of available indicators
+  # only 93283 life expectnacy now available 
   indicators() %>%
     filter(IndicatorID %in% c(93283, 93285, 93298)) %>%
     View()
@@ -82,7 +83,7 @@ stops <- stops %>%
     life_exp <- 
       # get data from PHE fingertips
         fingertips_data(
-          IndicatorID = c(93285, 93298), 
+          IndicatorID = c(93283), 
           ProfileID = 143, 
           AreaTypeID = 3)  %>%   
       # keep MSOA level only (smallest available)
@@ -93,7 +94,9 @@ stops <- stops %>%
         pivot_wider(id_cols = c(AreaCode, Sex), 
                     names_from = IndicatorID, values_from = Value) %>%
       # change col names from number to short name
-        rename(le = "93285", hle = "93298") %>%
+        rename(le = "93283"
+               # , hle = "93298" # hle has gone off local health
+               ) %>%
       # calculate years not in good health 
       # ie difference between life expectancy & healthy life expectancy
         mutate(not_good_health = le-hle) %>%

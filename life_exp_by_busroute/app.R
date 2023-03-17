@@ -60,12 +60,8 @@ ui <- dashboardPage(
         tabItems(
           # map tab
           tabItem(tabName = "map",
-            # box(title = "Map",
-            #     status = "primary",
-            #     width = 12,
-            #     solidHeader = TRUE,
-            leafletOutput("bus_map"),
-            # ),
+            # adjusts height of map to be full window minus some for header + box at bottom
+            tags$style(type = "text/css", "#bus_map {height: calc(100vh - 250px) !important;}"),
             box(title = textOutput("selected_stat"), #"on this route",
                 status = "primary",
                 width = 12,
@@ -73,7 +69,10 @@ ui <- dashboardPage(
                 infoBoxOutput("max_le"),
                 infoBoxOutput("min_le"),
                 infoBoxOutput("diff_le")
-                ),
+            ),
+            leafletOutput("bus_map"),
+            # ),
+
             downloadButton("bttn_data", "Get the data (csv)")
             ),
           # tab with table of all data
@@ -86,13 +85,14 @@ ui <- dashboardPage(
             br(),
             h3("What does this app show?"),
             p("This app is intended to visualise the differences in life expectancy and healthy life expectancy that can be seen over relatively short distances."),
-            p("Life expectancy is number of years a baby born today from a particular area can expect to live. It can be used as a general measure of overall population health."),
+            p("Life expectancy is at birth is the average number of years a baby born today in a particular area would be expected to live, if the death rates at each age group stayed as they are today for the rest of their life."),
+            p("Life expectancy is an important indicator of overall population health, and inequalities in health."),
             p("We can't live for ever, but is it fair that people from some areas can expect so many years more life than people from other areas? We would want to narrow the gap from what it is today."),
-            p("Healthy life expectancy is the number of years a baby born today in a particular area can expect to live in good health. This refers to self rated health, but self rated health is a good predictor of service usage."),
+            p("Healthy life expectancy is the number of years a baby born today in a particular area can expect to live in good health, again if today's situation remained the same for the rest of their life. This refers to self rated health, but self rated health is a good predictor of service usage."),
             p("Years not in good health is the difference between the two."),
             p("We would want to increase the proportion of people's lives that is spent in good health so they have the health to do what they want to do as long as possible, and also to reduce the cost of intensive health and social care that is often necessary where people experience a prolonged period of very poor health right at the end of their lives."),
-            p("To find out more about the reasons behind the inequalities in life expectancy, take a look at Public Health England's Segment Tool."),
-            a("PHE Segment Tool", href = "https://analytics.phe.gov.uk/apps/segment-tool/", 
+            p("To find out more about the reasons behind the inequalities in life expectancy, take a look at the Office for Health Improvement & Disparities's Segment Tool."),
+            a("OHID Segment Tool", href = "https://analytics.phe.gov.uk/apps/segment-tool/", 
               target = "_blank"),
             br(),
             br(),
@@ -102,11 +102,11 @@ ui <- dashboardPage(
             #    target = "_blank"),
             p("Bus routes are no longer completely up to date, but are still useful to show how life expectancy changes over relatively small areas."),
             br(),
-            br(),
-            p("Life expectancy data from Public Health England Fingertips, 2020 issue which is based on data relating to the period 2013-2017."),
+            p("Life expectancy data is from the Office for Health Improvement & Disparities' Fingertips, 2022 issue which is based on data relating to the period 2016-2020."),
+            p("Healthy Life expectancy data is from the Office for Health Improvement & Disparities' Fingertips, 2020 issue which is based on data relating to the period 2013-2017, however this is no longer available from this source."),
             p("Life expectancy at birth & healthy life expectancy used (upper age band 85+), for the Middle Super Output Area (MSOA) in which the bus stop is located."),
-            p("Years not in good health is calculated as the difference between the two."),
-            a("PHE Fingertips", href = "https://fingertips.phe.org.uk/search/life%20expectancy#page/0/gid/1/pat/101/par/E08000001/ati/3/are/E02000984", 
+            p("Years not in good health is calculated as the difference between the two. Since these now relate to different time periods, caution must be used when interpreting this information."),
+            a("OHID Fingertips", href = "https://fingertips.phe.org.uk/search/life%20expectancy#page/0/gid/1/pat/101/par/E08000001/ati/3/are/E02000984", 
               target = "_blank"),
             br(),
             br(),
@@ -157,10 +157,9 @@ server <- function(input, output, session) {
     
     # map
     output$bus_map <- renderLeaflet({
-      # TO DO - TEXT SEEMS A BIT SMALL ################
-      myLabels = as.list(glue("<b>Route:</b> {selected_data()$route_short_name} {selected_data()$route_long_name}<br>
+        myLabels = as.list(glue("<b>Route:</b> {selected_data()$route_short_name} {selected_data()$route_long_name}<br>
                                             <b>Stop:</b> {selected_data()$stop_name}<br>
-                                <b>{str_to_sentence(selected_data()$life_exp_gender)} {input$select_stat}:</b> {selected_data()$life_exp_val}"))
+                                <b>{str_to_sentence(selected_data()$life_exp_gender)} {input$select_stat}:</b> {round(selected_data()$life_exp_val, 1)}"))
         selected_data() %>%
             leaflet() %>%  
             addProviderTiles("Stamen.TonerLite") %>%

@@ -48,7 +48,7 @@
 
 # join stops with stops with life expectancy added
   stops_routes_joined <- 
-    left_join(stops_routes, stops, by = "stop_id") %>%
+    left_join(stops_routes, st_drop_geometry(stops), by = c("stop_id", "stop_name")) %>%
     # wnat to get rid of the multiple operator/ in /outbound versions & just keep longest
     # BUT duplicate route numbers
     # keep outbound only (remove inbound)
@@ -70,7 +70,7 @@
   stops_routes_joined2 <- stops_routes_joined %>%
     # can't get pivot_longer to work but gather works ok.
     gather(key = "life_exp_stat", value = "life_exp_val",
-           le_male:not_good_health_female) %>%
+           hle_male:not_good_health_female) %>%
     # keep only one underscore to separate on it
     mutate(life_exp_stat =  str_replace(life_exp_stat, 
                                         "not_good_health", "notgoodhealth")) %>%
@@ -91,6 +91,8 @@
    
   # remove stops_routes_joined as have v2 now
   rm(stops_routes_joined)
+  
+  # for when have added 
   
 # save data for shiny app    
   # rds file super much smaller than geojson also R doesn't need to translate it
