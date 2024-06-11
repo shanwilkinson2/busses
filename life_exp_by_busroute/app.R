@@ -155,7 +155,7 @@ server <- function(input, output, session) {
                                 <b>{str_to_sentence(selected_data()$life_exp_gender)} {input$select_stat}:</b> {round(selected_data()$life_exp_val, 1)}"))
         selected_data() %>%
             leaflet() %>%  
-            addProviderTiles("Stamen.TonerLite") %>%
+            addProviderTiles("OpenStreetMap.Mapnik") %>%
             addCircleMarkers(radius = 8, 
                              fillColor = ~life_exp_pal()(life_exp_val),
                              # popup = ~glue("<b>Route:</b> {route_short_name} {route_long_name}<br>
